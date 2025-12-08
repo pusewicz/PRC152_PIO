@@ -5,19 +5,19 @@
 #define SCL_PIN        		GPIO_NUM_9 
 #define SDA_PIN        		GPIO_NUM_8 
 
-//F103： CRL：0-7  CRH：8-15
-//0011：最大速度输出  1000：  10（随意）00：输入模式
+// F103: CRL:0-7  CRH:8-15
+// 0011: max speed output  1000:  10(any)00: input mode
 #define SDA_IN()            {digitalWrite(SDA_PIN, HIGH); pinMode(SDA_PIN, INPUT);}
 #define SDA_OUT()           pinMode(SDA_PIN, OUTPUT) 
 
-//IO操作
+// IO operations
 #define IIC_SCL0	        digitalWrite(SCL_PIN, LOW) 
 #define IIC_SCL1	        digitalWrite(SCL_PIN, HIGH) 
 #define IIC_SDA0	        digitalWrite(SDA_PIN, LOW) 
 #define IIC_SDA1	        digitalWrite(SDA_PIN, HIGH) 
-#define READ_SDA            digitalRead(SDA_PIN)  	//读取输入的SDA
+#define READ_SDA            digitalRead(SDA_PIN)  	// Read input SDA
 
-//IIC所有操作函数
+// All I2C operation functions
 void bsp_IIC_Init(void);                    //Initialize I2C's IO port				 
 void IIC_Start(void);                       //Send the begin signal of I2C
 void IIC_Stop(void);                        //Send the stop  signal of I2C

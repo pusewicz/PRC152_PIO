@@ -5,6 +5,6 @@
 
 void Key_Init(void);
 void Key_DeInit(void);
-unsigned char VolumeKeyScan(unsigned char mode);	//音量加减按键扫描
+unsigned char VolumeKeyScan(unsigned char mode);	// Volume up/down key scan
 
 #endif

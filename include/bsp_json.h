@@ -7,13 +7,13 @@
 
 enum{
     U0ERR_SUCCESS           = 0,
-    U0ERR_RCV_PACKAGE_ERR   = -1,   //接收数据包失败
-    U0ERR_PARSE_JSON_ERR    = -2,   //解析json数据包失败
-    U0ERR_PREPARE_JSON_ERR  = -3,   //准备json数据包失败
-    U0ERR_CMD_NOT_EXIT      = -4,   //指令不存在
+    U0ERR_RCV_PACKAGE_ERR   = -1,   // Receive packet failed
+    U0ERR_PARSE_JSON_ERR    = -2,   // Parse JSON packet failed
+    U0ERR_PREPARE_JSON_ERR  = -3,   // Prepare JSON packet failed
+    U0ERR_CMD_NOT_EXIT      = -4,   // Command does not exist
 
 };
-//json项目和值排序, 方便配置
+// JSON item and value ordering for configuration
 // #define ITEMSUM 33
 typedef enum
 {

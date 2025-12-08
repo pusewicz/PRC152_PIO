@@ -4,7 +4,7 @@
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
 #include <ArduinoJson.h>
 #include <WiFi.h>
-#include <esp_wifi.h> //用于esp_wifi_restore() 删除保存的wifi信息
+#include <esp_wifi.h> // For esp_wifi_restore() to delete saved wifi info
 #include <DNSServer.h>
 #include <WebServer.h>
 #include <HTTPClient.h>

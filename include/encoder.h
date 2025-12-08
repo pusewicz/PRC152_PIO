@@ -4,7 +4,7 @@
 
 void    Encoder_Init(void);
 void    Encoder_DeInit(void);
-int     EncoderClickValidate(void);             //返回编码器点击有效值
+int     EncoderClickValidate(void);             // Return encoder click valid value
 uint8_t Encoder_Switch_Scan(uint8_t mode);
 
 #endif

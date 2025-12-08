@@ -6,13 +6,13 @@
 extern volatile unsigned char  rx1_buf[USART1_BUF_SIZE];
 extern volatile unsigned char  rx2_buf[USART2_BUF_SIZE];
 
-//串口1 KDU/固件升级
-void bsp_UART1_Init(int baud); 
-void UART1_EnRCV(void);	                    //启动串口1接收
-int  UART1_getRcvFlag(void);                //判断接收标志位
-int  UART1_dataPreProcess(void);            //数据预处理
+// UART1 KDU/firmware upgrade
+void bsp_UART1_Init(int baud);
+void UART1_EnRCV(void);	                    // Start UART1 receive
+int  UART1_getRcvFlag(void);                // Check receive flag
+int  UART1_dataPreProcess(void);            // Data preprocessing
 
-//串口2 A20模块
+// UART2 A20 module
 void bsp_UART2_Init(int baud); 
 void bsp_UART2_DeInit(void);
 
@@ -29,6 +29,6 @@ void Set_A20(CHAN_ARV set, uint8_t sq);
 void Set_A20_MIC(uint8_t miclvl, uint8_t scramlvl, uint8_t tot);  
 void Set_A20_SavePower(bool enable);
 int  Get_A20_RSSI(void);  
-void A002_CALLBACK(void);           //A20数据交互,必须处理了才有a20数据返回
+void A002_CALLBACK(void);           // A20 data exchange, must be processed for A20 data return
 
 #endif

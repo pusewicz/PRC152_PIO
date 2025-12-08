@@ -1,64 +1,64 @@
 #ifndef __BSP_CH423_H__
 #define __BSP_CH423_H__
 
-// CH423接口定义
-#define     CH423_I2C_ADDR1     0x40         // CH423的地址
-#define     CH423_I2C_MASK      0x3E         // CH423的高字节命令掩码
+// CH423 interface definitions
+#define     CH423_I2C_ADDR1     0x40         // CH423 address
+#define     CH423_I2C_MASK      0x3E         // CH423 high byte command mask
 
-/*  设置系统参数命令 */ 
+/*  Set system parameters command */ 
 
-#define     CH423_SYS_CMD     0x4800     // 设置系统参数命令，默认方式
+#define     CH423_SYS_CMD     0x4800     // Set system parameters command, default mode
 #define     BIT_SLEEP         0X40
 #define     BIT_INTENS        0X20          //
-#define     BIT_OD_EN         0X10          //0:推挽输出(可以输出低电平和高电平)    1:开漏输出(只能输出低电平和不输出)   默认为推挽输出
-#define     BIT_X_INT         0x08       // 使能输入电平变化中断，为0禁止输入电平变化中断；为1并且DEC_H为0允许输出电平变化中断
-#define     BIT_DEC_H         0x04       // 控制开漏输出引脚高8位的片选译码
-#define     BIT_DEC_L         0x02       // 控制开漏输出引脚低8位的片选译码
-#define     BIT_IO_OE         0x01       // 控制双向输入输出引脚的三态输出，为1允许输出
+#define     BIT_OD_EN         0X10          // 0: push-pull output (can output low and high) 1: open-drain output (can only output low or float) default is push-pull
+#define     BIT_X_INT         0x08       // Enable input level change interrupt, 0 disables; 1 and DEC_H=0 enables level change interrupt
+#define     BIT_DEC_H         0x04       // Control open-drain output pins high 8-bit chip select decode
+#define     BIT_DEC_L         0x02       // Control open-drain output pins low 8-bit chip select decode
+#define     BIT_IO_OE         0x01       // Control bidirectional I/O pin tri-state output, 1 enables output
 
-/*  设置低8位开漏输出命令 */
+/*  Set low 8-bit open-drain output command */
 
-#define     CH423_OC_L_CMD    0x4400     // 设置低8位开漏输出命令，默认方式
-#define     BIT_OC0_L_DAT     0x01       // OC0为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC1_L_DAT     0x02       // OC1为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC2_L_DAT     0x04       // OC2为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC3_L_DAT     0x08       // OC3为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC4_L_DAT     0x10       // OC4为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC5_L_DAT     0x20       // OC5为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC6_L_DAT     0x40       // OC6为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC7_L_DAT     0x80       // OC7为0则使引脚输出低电平，为1则引脚不输出(高电平)
+#define     CH423_OC_L_CMD    0x4400     // Set low 8-bit open-drain output command, default mode
+#define     BIT_OC0_L_DAT     0x01       // OC0=0 outputs low, OC0=1 pin floats (high)
+#define     BIT_OC1_L_DAT     0x02       // OC1=0 outputs low, OC1=1 pin floats (high)
+#define     BIT_OC2_L_DAT     0x04       // OC2=0 outputs low, OC2=1 pin floats (high)
+#define     BIT_OC3_L_DAT     0x08       // OC3=0 outputs low, OC3=1 pin floats (high)
+#define     BIT_OC4_L_DAT     0x10       // OC4=0 outputs low, OC4=1 pin floats (high)
+#define     BIT_OC5_L_DAT     0x20       // OC5=0 outputs low, OC5=1 pin floats (high)
+#define     BIT_OC6_L_DAT     0x40       // OC6=0 outputs low, OC6=1 pin floats (high)
+#define     BIT_OC7_L_DAT     0x80       // OC7=0 outputs low, OC7=1 pin floats (high)
 
-/*  设置高8位开漏输出命令 */
+/*  Set high 8-bit open-drain output command */
 
-#define     CH423_OC_H_CMD    0x4600      // 设置低8位开漏输出命令，默认方式
-#define     BIT_OC8_L_DAT     0x01        // OC8为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC9_L_DAT     0x02        // OC9为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC10_L_DAT    0x04        // OC10为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC11_L_DAT    0x08        // OC11为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC12_L_DAT    0x10        // OC12为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC13_L_DAT    0x20        // OC13为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC14_L_DAT    0x40        // OC14为0则使引脚输出低电平，为1则引脚不输出(高电平)
-#define     BIT_OC15_L_DAT    0x80        // OC15为0则使引脚输出低电平，为1则引脚不输出(高电平)
+#define     CH423_OC_H_CMD    0x4600      // Set high 8-bit open-drain output command, default mode
+#define     BIT_OC8_L_DAT     0x01        // OC8=0 outputs low, OC8=1 pin floats (high)
+#define     BIT_OC9_L_DAT     0x02        // OC9=0 outputs low, OC9=1 pin floats (high)
+#define     BIT_OC10_L_DAT    0x04        // OC10=0 outputs low, OC10=1 pin floats (high)
+#define     BIT_OC11_L_DAT    0x08        // OC11=0 outputs low, OC11=1 pin floats (high)
+#define     BIT_OC12_L_DAT    0x10        // OC12=0 outputs low, OC12=1 pin floats (high)
+#define     BIT_OC13_L_DAT    0x20        // OC13=0 outputs low, OC13=1 pin floats (high)
+#define     BIT_OC14_L_DAT    0x40        // OC14=0 outputs low, OC14=1 pin floats (high)
+#define     BIT_OC15_L_DAT    0x80        // OC15=0 outputs low, OC15=1 pin floats (high)
 
-/* 设置双向输入输出命令 */
+/* Set bidirectional I/O command */
 
-#define     CH423_SET_IO_CMD   0x6000    // 设置双向输入输出命令，默认方式
-#define     BIT_IO0_DAT        0x01      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO0为0输出低电平，为1输出高电平
-#define     BIT_IO1_DAT        0x02      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO1为0输出低电平，为1输出高电平
-#define     BIT_IO2_DAT        0x04      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO2为0输出低电平，为1输出高电平
-#define     BIT_IO3_DAT        0x08      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO3为0输出低电平，为1输出高电平
-#define     BIT_IO4_DAT        0x10      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO4为0输出低电平，为1输出高电平
-#define     BIT_IO5_DAT        0x20      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO5为0输出低电平，为1输出高电平
-#define     BIT_IO6_DAT        0x40      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO6为0输出低电平，为1输出高电平
-#define     BIT_IO7_DAT        0x80      // 写入双向输入输出引脚的输出寄存器，当IO_OE=1,IO7为0输出低电平，为1输出高电平
+#define     CH423_SET_IO_CMD   0x6000    // Set bidirectional I/O command, default mode
+#define     BIT_IO0_DAT        0x01      // Write to bidirectional I/O output register, when IO_OE=1, IO0=0 outputs low, =1 outputs high
+#define     BIT_IO1_DAT        0x02      // Write to bidirectional I/O output register, when IO_OE=1, IO1=0 outputs low, =1 outputs high
+#define     BIT_IO2_DAT        0x04      // Write to bidirectional I/O output register, when IO_OE=1, IO2=0 outputs low, =1 outputs high
+#define     BIT_IO3_DAT        0x08      // Write to bidirectional I/O output register, when IO_OE=1, IO3=0 outputs low, =1 outputs high
+#define     BIT_IO4_DAT        0x10      // Write to bidirectional I/O output register, when IO_OE=1, IO4=0 outputs low, =1 outputs high
+#define     BIT_IO5_DAT        0x20      // Write to bidirectional I/O output register, when IO_OE=1, IO5=0 outputs low, =1 outputs high
+#define     BIT_IO6_DAT        0x40      // Write to bidirectional I/O output register, when IO_OE=1, IO6=0 outputs low, =1 outputs high
+#define     BIT_IO7_DAT        0x80      // Write to bidirectional I/O output register, when IO_OE=1, IO7=0 outputs low, =1 outputs high
 
-/* 读取双向输入输出命令 */
-#define CH423_RD_IO_CMD		0x4D	// 输入I/O引脚当前状态
+/* Read bidirectional I/O command */
+#define CH423_RD_IO_CMD		0x4D	// Read I/O pins current state
 
 void CH423_Init(void);
-void CH423_Write( unsigned short cmd );         // 写命令
-void CH423_WriteByte( unsigned short cmd );     // 写出数据
-unsigned char CH423_ReadByte();                 // 读取数据
+void CH423_Write( unsigned short cmd );         // Write command
+void CH423_WriteByte( unsigned short cmd );     // Write data
+unsigned char CH423_ReadByte();                 // Read data
 
 void SetIOChannel(unsigned char IOChannel);
 void ClrIOChannel(unsigned char IOChannel);
