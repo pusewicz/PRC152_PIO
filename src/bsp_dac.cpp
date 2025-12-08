@@ -5,8 +5,8 @@
 volatile int ToneState = OFF;
 ToneClass    Tone = TONE2K;
 static volatile int i1=0, i2=0;
-int SineWave_Value_2K[DAC_SAMPLE_2K];         //dac的正弦波数据   开始两次2K
-int SineWave_Value_nK[DAC_SAMPLE_1_5K];       //dac的正弦波数据   结束一次1.5K
+int SineWave_Value_2K[DAC_SAMPLE_2K];         // DAC sine wave data - start tone 2K
+int SineWave_Value_nK[DAC_SAMPLE_1_5K];       // DAC sine wave data - end tone 1.5K
 
 static int test_val[200]=
 {
@@ -26,7 +26,7 @@ void prepare_data(int array[], int pnt_num)
     }
     D_printf("\n");
 }
-//DAC-DMA正弦波数据表
+// DAC-DMA sine wave data table
 void SineWave_Data()
 {
     // u16 i;

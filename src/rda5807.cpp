@@ -1,22 +1,22 @@
 #include "rda5807.h"
 
-#include "tim_int.h"    //收音机恢复
-#include "key.h"        //按键
-#include "encoder.h"    //编码器
-#include "bsp_m62364.h" //音频控制
+#include "tim_int.h"    // Radio restore
+#include "key.h"        // Keys
+#include "encoder.h"    // Encoder
+#include "bsp_m62364.h" // Audio control
 #include "FCS152_KDU.h"
 
 #include "bsp_iic.h"
 #include "bsp_timer.h"
 #include "bsp_MatrixKeyBoard.h"
 
-#include "bsp_storage.h" //储存频率
-#include "controller.h"  //使能/控制
+#include "bsp_storage.h" // Store frequency
+#include "controller.h"  // Enable/Control
 
 #define PURE_FM 2
 extern volatile u8 WFM;
 extern volatile u8 KDU_INSERT;
-extern int TIMES; //编码器旋转次数记录
+extern int TIMES; // Encoder rotation count
 extern u8 WFM_LEVEL[8], VOLUME, AUD;
 extern void SHUT(void);
 extern void VOL_Reflash(int operate);
@@ -58,7 +58,7 @@ void RDA5807_WriteReg(unsigned char addr, short val)
 }
 //
 
-//收音机电源控制开关
+// Radio power control switch
 void RDA_Power(unsigned char off_on)
 {
     if (off_on)
@@ -72,7 +72,7 @@ void RDA_Power(unsigned char off_on)
 }
 //
 
-//设置频率,单位为100K，即870*100KHz
+// Set frequency, unit is 100K, i.e. 870*100KHz
 void RDA5807_Set_Freq(short freq)
 {
     uint16_t timeout = 0;
@@ -82,7 +82,7 @@ void RDA5807_Set_Freq(short freq)
     delay_ms(50);
 }
 //
-//收音机开关， 设置收音机数据时使用
+// Radio on/off, used when setting radio data
 void RDA5807_Init(char off_on)
 {
     // Serial.printf("Init FM:%d\n", off_on);
@@ -112,7 +112,7 @@ void RDA5807_Init(char off_on)
     }
 }
 //
-//收音机开关切换菜单
+// Radio on/off toggle menu
 int RDA5807_Switch(void)
 {
     char FM_OLD = WFM;
@@ -198,8 +198,8 @@ int RDA5807_Switch(void)
                 if (FM_OLD == ON)
                 {
                     Serial.printf("need to resume\n");
-                    RDA5807_ResumeImmediately();   //进入时启动恢复才会用到这个
-                    if (RcvSignal() || PTTPress()) //进入时一直接收信号或者按着PTT(后者其实不存在)
+                    RDA5807_ResumeImmediately();   // Used when starting recovery on entry
+                    if (RcvSignal() || PTTPress()) // Always receiving signal or PTT pressed on entry (latter doesn't exist)
                         RDA5807_Init(ON);
                 }
                 else
@@ -228,7 +228,7 @@ int RDA5807_Switch(void)
             else
                 LCD_ShowString0608(0, 1, "FALSE      ", 1, 100);
 
-            return ENT2LAST;//用于退出编码器选择, 修复显示箭头
+            return ENT2LAST;// Used to exit encoder selection, fix arrow display
         }
     }
 }
@@ -255,7 +255,7 @@ unsigned char fm_freq_buf[4] = {0, 0, 0, 1}, flag_clear = 0, fm_finish = 0,
 int FM_Freq_Set_Show(int x, int y, int *result)
 {
     key_press = Matrix_KEY_Scan(0);
-    if(A002_SQ_READ == 0 && (key_press == MATRIX_RESULT_3 || key_press == MATRIX_RESULT_CLR) )  //用于收到信号时，允许直接退出
+    if(A002_SQ_READ == 0 && (key_press == MATRIX_RESULT_3 || key_press == MATRIX_RESULT_CLR) )  // Allow direct exit when receiving signal
         return 8;
 
     if ( WFM != PURE_FM  && (A002_SQ_READ == 0 || PTT_READ == 0)  )
@@ -347,14 +347,14 @@ int FM_Freq_Set_Show(int x, int y, int *result)
                 FM_PageShow();
                 return NO_OPERATE;
             }
-            return 8; //退出
+            return 8; // Exit
         }
         LCD_ShowAscii1016(x + 0, y, ' ', 1);
         LCD_ShowAscii1016(x + 10, y, ' ', 1);
         LCD_ShowAscii1016(x + 20, y, ' ', 1);
         LCD_ShowAscii1016(x + 30, y, ' ', 1);
         LCD_ShowAscii1016(x + 40, y, ' ', 1);
-        LCD_ShowAscii1016(x + 50, y, '}' + 1, 1); //箭头
+        LCD_ShowAscii1016(x + 50, y, '}' + 1, 1); // Arrow
         fm_freq_buf[0] = 0, fm_freq_buf[1] = 0, fm_freq_buf[2] = 0, fm_freq_buf[3] = 0;
         fm_locate = x;
         fm_bit = 0;
@@ -367,7 +367,7 @@ int FM_Freq_Set_Show(int x, int y, int *result)
         if (fm_bit > 0 || (fm_bit == 0 && flag_clear == 1))
         {
             if (fm_bit < 3 || fm_locate < 50 + x)
-                for (; fm_bit < 4; fm_bit++) //补零
+                for (; fm_bit < 4; fm_bit++) // Fill with zeros
                     fm_freq_buf[fm_bit] = 0;
             fm_finish = 1;
             flag_clear = 0;
@@ -457,7 +457,7 @@ int FM_Freq_Set_Show(int x, int y, int *result)
             LCD_ShowAscii1016(x + 20, y, ' ', 1);
             LCD_ShowAscii1016(x + 30, y, ' ', 1);
             LCD_ShowAscii1016(x + 40, y, ' ', 1);
-            LCD_ShowAscii1016(x + 50, y, '}' + 1, 1); //箭头
+            LCD_ShowAscii1016(x + 50, y, '}' + 1, 1); // Arrow
         }
         D_printf("[%d] : %d\n", fm_bit, key_press);
         fm_freq_buf[fm_bit] = key_press;
@@ -477,7 +477,7 @@ int FM_Freq_Set_Show(int x, int y, int *result)
             LCD_ShowAscii1016(x + 20, y, ' ', 1);
             LCD_ShowAscii1016(x + 30, y, ' ', 1);
             LCD_ShowAscii1016(x + 40, y, ' ', 1);
-            LCD_ShowAscii1016(x + 50, y, '}' + 1, 1); //箭头
+            LCD_ShowAscii1016(x + 50, y, '}' + 1, 1); // Arrow
         }
         D_printf("[2] : %d", key_press);
         fm_freq_buf[0] = 0, fm_freq_buf[1] = key_press;
@@ -564,19 +564,19 @@ void FM_PageShow(void)
     LCD_ShowString0608(104, 1, FM_MODE[WFM], 1, 128);
     LCD_ShowPIC1616(60, 2, 11, 1);  //<<
     LCD_ShowPIC1616(86, 2, 12, 1);  //>>
-    LCD_ShowPIC1616(112, 2, 13, 1); //返回标志
+    LCD_ShowPIC1616(112, 2, 13, 1); // Return icon
 }
 void Enter_Radio()
 {
     Flag_Main_Page = 0;
 
     unsigned char
-        flag_GlobalOP = NO_OPERATE, //全局函数操作返回标记
-        key_encoder,                //编码器返回值
-        key_matrix,                 //键盘操作返回值
-        locate_encoder = 0,         //编码器第一次按下后,光标所在位置
-        flag_return = 0,            //编码器退出操作,清除箭头光标
-        fm_change = 1;              //操作后进行频道判断的标志
+        flag_GlobalOP = NO_OPERATE, // Global function operation return flag
+        key_encoder,                // Encoder return value
+        key_matrix,                 // Keyboard operation return value
+        locate_encoder = 0,         // Cursor position after first encoder press
+        flag_return = 0,            // Encoder exit operation, clear arrow cursor
+        fm_change = 1;              // Flag to check channel after operation
 
     FM_PageShow();
 
@@ -597,7 +597,7 @@ void Enter_Radio()
         key_encoder = Encoder_Switch_Scan(0);
         switch (key_encoder)
         {
-        case key_click: //第一次按下编码器
+        case key_click: // First encoder press
             TIMES = 0;
 
             if (flag_clear || !first_press)
@@ -635,7 +635,7 @@ void Enter_Radio()
                 if (key_matrix == MATRIX_RESULT_N || key_matrix == MATRIX_RESULT_LEFT)
                     TIMES--;
 
-                if (TIMES != 0) //选择选项
+                if (TIMES != 0) // Select option
                 {
                     if (TIMES > 0) //+
                     {
@@ -651,7 +651,7 @@ void Enter_Radio()
                     LCD_ShowAscii1016(50, 2, ' ', 1);
                     LCD_ShowAscii1016(77, 2, ' ', 1);
                     LCD_ShowAscii1016(103, 2, ' ', 1);
-                    switch (locate_encoder) //箭头显示
+                    switch (locate_encoder) // Arrow显示
                     {
                     case 0:
                         LCD_ShowPIC0608(98, 1, 1, 1);
@@ -687,7 +687,7 @@ void Enter_Radio()
                         }
                         break;
 
-                    case 1: //按步进调频
+                    case 1: // FM tuning by step
                         if (A002_SQ_READ == 0 || WFM == OFF)
                         {
                             flag_return = 1;
@@ -727,7 +727,7 @@ void Enter_Radio()
                             //
                             key_encoder = Encoder_Switch_Scan(0);
                             key_matrix = Matrix_KEY_Scan(0);
-                            if (key_encoder == key_click || key_encoder == key_double || KDU_INSERT || key_matrix == MATRIX_RESULT_CLR || PTT_READ == 0 || A002_SQ_READ == 0) //确认返回上一级
+                            if (key_encoder == key_click || key_encoder == key_double || KDU_INSERT || key_matrix == MATRIX_RESULT_CLR || PTT_READ == 0 || A002_SQ_READ == 0) // Confirm return to previous level
                             {
                                 Radio_Freq_Show(FM_FREQ, 1);
                                 save_FMFreq(FM_FREQ);
@@ -739,7 +739,7 @@ void Enter_Radio()
                         }
                         break;
 
-                    case 2: //向下扫频
+                    case 2: // Scan down
                         if (A002_SQ_READ == 0 || WFM == OFF)
                         {
                             flag_return = 1;
@@ -759,7 +759,7 @@ void Enter_Radio()
                             RDA5807_Set_Freq(FM_FREQ);
                             Radio_Freq_Show(FM_FREQ, 1);
 
-                            if (RDA5807_ReadReg(0xb) & 0x0100) //找到台，返回上一级
+                            if (RDA5807_ReadReg(0xb) & 0x0100) // Station found, return to previous level
                             {
                                 LCD_ShowString0608(0, 1, "TRUE         ", 1, 120);
                                 break;
@@ -768,7 +768,7 @@ void Enter_Radio()
                             key_matrix = Matrix_KEY_Scan(0);
                             if (key_encoder == key_click | key_encoder == key_double || key_matrix == MATRIX_RESULT_CLR || KDU_INSERT || PTT_READ == 0 || A002_SQ_READ == 0)
                             {
-                                if (RDA5807_ReadReg(0xb) & 0x0100) //找到台，返回上一级
+                                if (RDA5807_ReadReg(0xb) & 0x0100) // Station found, return to previous level
                                     LCD_ShowString0608(0, 1, "TRUE         ", 1, 120);
                                 else
                                     LCD_ShowString0608(0, 1, "FALSE        ", 1, 120);
@@ -781,7 +781,7 @@ void Enter_Radio()
                         LCD_ShowPIC1616(60, 2, 11, 1);
                         break;
 
-                    case 3: //向上扫频
+                    case 3: // Scan up
                         if (A002_SQ_READ == 0 || WFM == OFF)
                         {
                             flag_return = 1;
@@ -802,7 +802,7 @@ void Enter_Radio()
                             RDA5807_Set_Freq(FM_FREQ);
                             Radio_Freq_Show(FM_FREQ, 1);
 
-                            if (RDA5807_ReadReg(0xb) & 0x0100) //找到台，返回上一级
+                            if (RDA5807_ReadReg(0xb) & 0x0100) // Station found, return to previous level
                             {
                                 LCD_ShowString0608(0, 1, "TRUE         ", 1, 120);
                                 break;
@@ -811,7 +811,7 @@ void Enter_Radio()
                             key_matrix = Matrix_KEY_Scan(0);
                             if (key_encoder == key_click || key_encoder == key_double || key_matrix == MATRIX_RESULT_CLR || KDU_INSERT || A002_SQ_READ == 0 || PTT_READ == 0)
                             {
-                                if (RDA5807_ReadReg(0xb) & 0x0100) //找到台，返回上一级
+                                if (RDA5807_ReadReg(0xb) & 0x0100) // Station found, return to previous level
                                     LCD_ShowString0608(0, 1, "TRUE         ", 1, 120);
                                 else
                                     LCD_ShowString0608(0, 1, "FALSE        ", 1, 120);
@@ -824,7 +824,7 @@ void Enter_Radio()
                         LCD_ShowPIC1616(86, 2, 12, 1);
                         break;
 
-                    case 4: //退出收音机
+                    case 4: // Exit收音机
                         if (WFM == PURE_FM)
                             break;
                         VFO_Clear();
@@ -837,7 +837,7 @@ void Enter_Radio()
                     flag_return = 1;
                 else if (key_encoder == key_long)
                     SHUT();
-                if (flag_return) //退出编码器选择
+                if (flag_return) // Exit编码器选择
                 {
                     LCD_ShowAscii0608(98, 1, ' ', 1);
                     LCD_ShowAscii1016(50, 2, ' ', 1);
@@ -880,12 +880,12 @@ void Enter_Radio()
 
         // Serial.printf("#######%s: %d#######\n", __FUNCTION__, __LINE__);
         key_matrix = FM_Freq_Set_Show(0, 2, &FM_FREQ);
-        if (key_matrix == 1) //写完
+        if (key_matrix == 1) // Input complete
         {
             fm_change = 1;
             RDA5807_Set_Freq(FM_FREQ);
         }
-        else if (key_matrix == 2 || TIMES > 0) //上加  p键
+        else if (key_matrix == 2 || TIMES > 0) // Add up  P key
         {
             TIMES = 0;
             if (WFM == OFF)
@@ -899,7 +899,7 @@ void Enter_Radio()
             RDA5807_Set_Freq(FM_FREQ);
             Radio_Freq_Show(FM_FREQ, 1);
         }
-        else if (key_matrix == 3 || TIMES < 0) //下减  N键
+        else if (key_matrix == 3 || TIMES < 0) // Subtract down  N key
         {
             TIMES = 0;
             if (WFM == OFF)
@@ -912,7 +912,7 @@ void Enter_Radio()
             RDA5807_Set_Freq(FM_FREQ);
             Radio_Freq_Show(FM_FREQ, 1);
         }
-        else if (key_matrix == 4) //下扫 左键
+        else if (key_matrix == 4) // Scan down  Left key
         {
             TIMES = 0;
             RDA5807_ResumeImmediately();
@@ -950,7 +950,7 @@ void Enter_Radio()
             TIMES = 0;
             LCD_ShowPIC1616(60, 2, 11, 1);
         }
-        else if (key_matrix == 5) //上扫 右键#
+        else if (key_matrix == 5) // Scan up  Right key #
         {
             TIMES = 0;
             RDA5807_ResumeImmediately();
@@ -987,7 +987,7 @@ void Enter_Radio()
             TIMES = 0;
             LCD_ShowPIC1616(86, 2, 12, 1);
         }
-        else if (key_matrix == 8) //退出 CLR键
+        else if (key_matrix == 8) // Exit CLR键
         {
             if (WFM == PURE_FM)
                 continue;
@@ -996,7 +996,7 @@ void Enter_Radio()
         }
         D_printf("#######%s: %d#######\n", __FUNCTION__, __LINE__);
 
-        //判断真台与否
+        // Check if station is real
         if (fm_change)
         {
             fm_change = 0;

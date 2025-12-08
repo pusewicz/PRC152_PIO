@@ -27,7 +27,7 @@ void ADC_Init(void)
 
 void DAC_Init(void)
 {
-    SineWave_Data(); //生成数据
+    SineWave_Data(); // Generate data
     bsp_DAC_Init();
 }
 
@@ -46,7 +46,7 @@ void LightBacklight(void)
 int Get_Battery_Vol(void)
 {
     int voltage = Use_ADC();
-    static u8 lowBatteryCal = 0; //检测电池电压低次数
+    static u8 lowBatteryCal = 0; // Low battery voltage detection count
     if (POWER_SELECT_FLAG)       // 12V
     {
         if (voltage < VOLTAGE_OFF_12_FLOOR || voltage > VOLTAGE_OFF_12_UPPER)
@@ -87,10 +87,10 @@ void test_DAC_always()
     }
 }
 
-//按下PTT的发射和结束提示音
+// PTT press TX start and end tones
 void Start_Tone(unsigned char STOP_START)
 {
-    SPK_SWITCH(AUD, ON); //==>响 发射提示
+    SPK_SWITCH(AUD, ON); // ==> Sound TX notification
 
     if (VOLUME > 0)
     {
@@ -102,16 +102,16 @@ void Start_Tone(unsigned char STOP_START)
         M62364_SetSingleChannel(A20_LINE_CHAN, 0);
         M62364_SetSingleChannel(8, 0);
     }
-    M62364_SetSingleChannel(TONE_OUT_CHAN, 100); //输出到A20发射
+    M62364_SetSingleChannel(TONE_OUT_CHAN, 100); // Output to A20 transmit
 
-    delay_ms(200); //必需的延时,否则缺失第一声
+    delay_ms(200); // Required delay, otherwise first tone is missing
 
     // pinMode(DAC_RX_PIN, OUTPUT);
     bsp_UART2_DeInit();
     ESP_ERROR_CHECK(dac_output_enable(DAC_CHAN));
-    if (STOP_START == 1) //开始
+    if (STOP_START == 1) // Start
     {
-        //前置提示音
+        // Pre-transmission tone
         RingTone(TONE2K, ON);
         delay_ms(100); // delay_ms(80);
         RingTone(TONE2K, OFF);
@@ -122,7 +122,7 @@ void Start_Tone(unsigned char STOP_START)
     }
     else
     {
-        //结束提示音
+        // End transmission tone
         RingTone(TONE1_5K, ON);
         delay_ms(100);
         RingTone(TONE1_5K, OFF);
@@ -133,35 +133,35 @@ void Start_Tone(unsigned char STOP_START)
     bsp_UART2_Init(9600);
     // A002_Init();
 
-    SPK_SWITCH(AUD, OFF); //==>发射提示
+    SPK_SWITCH(AUD, OFF); // ==> TX notification
     M62364_SetSingleChannel(A20_LINE_CHAN, 0);
     M62364_SetSingleChannel(TONE_OUT_CHAN, 0);
     M62364_SetSingleChannel(8, 0);
     // delay_ms(5);
 }
 
-//长按静噪按键进入常静噪模式的提示音
+// Long-press squelch button to enter constant squelch mode notification tone
 void Start_ToneSql0(void)
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    M62364_SetSingleChannel(A20_LINE_CHAN, Di_Gain);            //修改增益输出"Di"
-    M62364_SetSingleChannel(8, 50);                             // toneout输出打开
+    M62364_SetSingleChannel(A20_LINE_CHAN, Di_Gain);            // Modify gain output "Di"
+    M62364_SetSingleChannel(8, 50);                             // Tone out enable
     //////////////////////////////////////////////////////////////////
-    //配置DAC
-    pinMode(DAC_RX_PIN, OUTPUT);                                //设置引脚为输出模式，以便于启动DAC
-    ESP_ERROR_CHECK(dac_output_enable(DAC_CHAN));               //设置串口引脚
+    // Configure DAC
+    pinMode(DAC_RX_PIN, OUTPUT);                                // Set pin to output mode to start DAC
+    ESP_ERROR_CHECK(dac_output_enable(DAC_CHAN));               // Set serial port pin
     //////////////////////////////////////////////////
     RingTone(TONE1_5K, ON);
     delay_ms(60);
     RingTone(TONE1_5K, OFF);
     //////////////////////////////////////////////////
-    //结束DAC, 重新配置A002
+    // End DAC, reconfigure A002
     dac_output_voltage(DAC_CHAN, 0);
     ESP_ERROR_CHECK(dac_output_disable(DAC_CHAN));
-    bsp_UART2_Init(9600);                                       //拉高电平,恢复串口2RX通讯, 设置串口引脚
+    bsp_UART2_Init(9600);                                       // Pull high, restore UART2 RX, set serial port pin
     //////////////////////////////////////////////////////////////////
-    M62364_SetSingleChannel(8, 0);                              // toneout输出关闭
-    M62364_SetSingleChannel(A20_LINE_CHAN, A20_LEVEL[VOLUME]);  //恢复当前增益大小输出声音
+    M62364_SetSingleChannel(8, 0);                              // Tone out disable
+    M62364_SetSingleChannel(A20_LINE_CHAN, A20_LEVEL[VOLUME]);  // Restore current gain level for audio output
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     // delay_ms(5);
 }

@@ -2,7 +2,7 @@
 #include "bsp_delay.h"
 #include "bsp_conio.h"
 
-volatile int TIMES = 0;	//编码器操作数值,正值为加,负值为减
+volatile int TIMES = 0;	// Encoder operation value, positive for add, negative for subtract
 volatile u8 key_timer_cnt1 = 0;
 volatile u8 key_timer_cnt2 = 0;
 volatile int spin_cal = 0;
@@ -51,8 +51,8 @@ static unsigned char key_driver(void)
     {
         case key_state_0:
             if(key)
-                key_state_buffer1 = key_state_1; 
-                //按键被按下，状态转换到按键消抖和确认状态//
+                key_state_buffer1 = key_state_1;
+                // Key pressed, state transitions to debounce and confirm state //
             break;
             
         case key_state_1:
@@ -60,41 +60,42 @@ static unsigned char key_driver(void)
             {
                 key_timer_cnt1 = 0;
                 key_state_buffer1 = key_state_2;
-                //按键仍然处于按下状态
-                //消抖完成，key_timer开始准备计时
-                //状态切换到按下时间计时状态
+                // Key still pressed
+                // Debounce complete, key_timer starts counting
+                // State transitions to press duration timing state
             }
             else
                 key_state_buffer1 = key_state_0;
-                //按键已经抬起，回到按键初始状态
-            break;  //完成软件消抖
+                // Key released, return to initial state
+            break;  // Software debounce complete
             
         case key_state_2:
-            if(!key) 
+            if(!key)
             {
-                key_return = key_click;  //按键抬起，产生一次click操作
-                key_state_buffer1 = key_state_0;  //转换到按键初始状态
+                key_return = key_click;  // Key released, generate click event
+                key_state_buffer1 = key_state_0;  // Transition to initial state
             }
-            else if(key && key_timer_cnt1 >= 15)  //按键继续按下，计时超过1000ms
+            else if(key && key_timer_cnt1 >= 15)  // Key still pressed, timing exceeds 1000ms
             {
                 ClearShut();
-                key_return = key_long;  //送回长按事件
-                key_state_buffer1 = key_state_3;  //转换到等待按键释放状态
+                key_return = key_long;  // Return long press event
+                key_state_buffer1 = key_state_3;  // Transition to wait for key release state
             }
             break;
-            
-        case key_state_3:  //等待按键释放
-            if(!key)  //按键释放
-                key_state_buffer1 = key_state_0;  //切回按键初始状态
+
+        case key_state_3:  // Wait for key release
+            if(!key)  // Key released
+                key_state_buffer1 = key_state_0;  // Return to initial state
             break;
     }
     return key_return;
 }
  
 /***************************************************************************
-函数功能：中层按键处理函数，调用底层函数一次，处理双击事件的判断，
-                                        返回上层正确的无键、单击、双击、长按四种状态
-本函数由上层循环调用，间隔10ms
+Function: Middle-layer key processing function, calls lower-layer function once,
+          handles double-click event detection,
+          returns correct states: idle, click, double-click, long-press
+This function is called by upper layer in loop, interval 10ms
 ***************************************************************************/
 u8 Encoder_Switch_Scan(u8 mode)
 {
@@ -110,28 +111,28 @@ u8 Encoder_Switch_Scan(u8 mode)
         case key_state_0:
             if(key == key_click)
             {
-                key_timer_cnt2 = 0;  //第一次单击，不返回，到下个状态判断是否会出现双击
+                key_timer_cnt2 = 0;  // First click, don't return, go to next state to check for double-click
                 key_state_buffer2 = key_state_1;
 				ClearShut();
             }
-            else 
-                key_return = key;  //对于无键、长按，返回原事件
+            else
+                key_return = key;  // For idle or long-press, return original event
             break;
-            
+
         case key_state_1:
-            if(key == key_click)  //又一次单击，时间间隔小于500ms
+            if(key == key_click)  // Another click, time interval less than 500ms
             {
-                key_return = key_double;  //返回双击事件，回到初始状态
+                key_return = key_double;  // Return double-click event, back to initial state
                 key_state_buffer2 = key_state_0;
             }
             else if(key_timer_cnt2 > 3)//4
             {
-                //这里500ms内肯定读到的都是无键事件，因为长按大于1000ms
-                //在1s前底层返回的都是无键
-				
-                key_return = key_click;  //500ms内没有再次出现单击事件，返回单击事件
-                key_state_buffer2 = key_state_0;  //返回初始状态
-                            
+                // Within 500ms, reads are always idle events because long-press is >1000ms
+                // Before 1s, lower layer returns idle
+
+                key_return = key_click;  // No second click within 500ms, return click event
+                key_state_buffer2 = key_state_0;  // Return to initial state
+
             }
             break;
     }

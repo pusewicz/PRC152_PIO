@@ -6,7 +6,7 @@
 
 extern void SHUT(void);
 extern uint8_t SQL;
-void EN_GPIO_Init(void) // 使能引脚初始化
+void EN_GPIO_Init(void) // Enable pin initialization
 {
     switch (Select_Power())
     {
@@ -25,7 +25,7 @@ void EN_GPIO_Init(void) // 使能引脚初始化
         break;
 
     case VOLTAGE_ERROR:
-        D_printf("电压错误\n");
+        D_printf("Voltage error\n");
         LCD_Clear(GLOBAL32);
         LCD_ShowString0608(25, 2, "Power ERROR", 1, 128);
         break;
@@ -36,7 +36,7 @@ void EN_GPIO_Init(void) // 使能引脚初始化
     delay_ms(2000);
     SHUT();
 }
-void A002_Init(void) // A20控制引脚初始化
+void A002_Init(void) // A20 control pin initialization
 {
     bsp_A002_Init();
     A002_PTT_SET;
@@ -50,7 +50,7 @@ void A002_Init(void) // A20控制引脚初始化
     // Serial.printf("A002 Transmition Moudle Initial Successfully!\n");
 }
 
-void A002_Deinit(void) // A20控制引脚初始化
+void A002_Deinit(void) // A20 control pin de-initialization
 {
     pinMode(A002_SQ_PIN, INPUT_PULLUP);
     pinMode(A002_PD_PIN, INPUT_PULLDOWN);
@@ -82,13 +82,13 @@ u8 Select_Power(void)
     // for(u8 i=0; i<5; i++)
     //  refreshADCVal();
     uint32_t adc_val = Use_ADC();
-    // Serial.printf("\n当前电压:%d\n", adc_val);
+    // Serial.printf("\nCurrent voltage:%d\n", adc_val);
 
     if (adc_val > VOLT8_ON_FLOOR && adc_val < VOLT8_ON_UPPER)
     {
         POWER_EN_12_SET;
         delay_ms(100);
-        POWER_EN_12_CLR; // 硬件错误导致:8V电源电流被12V电源电路瞬间拉低导致电源关
+        POWER_EN_12_CLR; // Hardware bug: 8V power current pulled low instantly by 12V power circuit causing shutdown
         POWER_EN_8_SET;
         POWER_SELECT_FLAG = 0;
         return VOLTAGE_NORMAL;
@@ -114,19 +114,19 @@ extern u8 MIC_LEVEL[3], MIC;
 void MIC_SWITCH(char mic_temp, char on_off)
 {
     D_printf("\nMIC:%d, sta:%d\n", mic_temp, on_off);
-    // 开运放
-    // 设置增益
+    // Enable op-amp
+    // Set gain
     if (on_off)
     {
         switch (mic_temp)
         {
-        case IN: // 内mic
+        case IN: // Internal mic
             MIC_IN_SET;
             M62364_SetSingleChannel(MIC_IN_CHAN, MIC_LEVEL[1]);
             break;
 
-        case TOP:  // 顶mic
-        case SIDE: // 侧mic
+        case TOP:  // Top mic
+        case SIDE: // Side mic
             MIC_OUT_SET;
             M62364_SetSingleChannel(MIC_OUT_CHAN, MIC_LEVEL[MIC]);
             break;
@@ -134,10 +134,10 @@ void MIC_SWITCH(char mic_temp, char on_off)
     }
     else
     {
-        // 关运放
+        // Disable op-amp
         MIC_IN_CLR;
         MIC_OUT_CLR;
-        // 关矩阵增益
+        // Disable matrix gain
         M62364_SetSingleChannel(MIC_IN_CHAN, 0);
         M62364_SetSingleChannel(MIC_OUT_CHAN, 0);
     }
@@ -148,28 +148,28 @@ void SPK_SWITCH(char spk_temp, char on_off)
     D_printf("\nSPK:%d, sta:%d\n", spk_temp, on_off);
     if (on_off)
     {
-        // 开功放
+        // Enable power amp
         switch (spk_temp)
         {
-        case IN: // 内spk
+        case IN: // Internal spk
             SPK_IN_SET;
             break;
 
-        case TOP:  // 顶spk
-        case SIDE: // 边spk
+        case TOP:  // Top spk
+        case SIDE: // Side spk
             SPK_OUT_SET;
             break;
         }
     }
     else
     {
-        // 关功放
+        // Disable power amp
         SPK_IN_CLR;
         SPK_OUT_CLR;
     }
     delay_ms(1);
 }
-void VDO_SWITCH(unsigned char on_off) // 6针头电源输出
+void VDO_SWITCH(unsigned char on_off) // 6-pin header power output
 {
     if (on_off)
     {

@@ -20,22 +20,22 @@ void bsp_A002_Init(void)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int L_LAST=0, R_LAST=0;
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;  //声明一个portMUX_TYPE类型的变量，利用其对主代码和中断之间的同步进行处理
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;  // Declare portMUX_TYPE variable for synchronization between main code and interrupts
 void Encoder_Click_Init(void)
 {
     pinMode(ENCODER_CLICK_PIN, INPUT_PULLUP);
 }
 void Encoder_Click_DeInit(void)
 {
-    // pinMode(ENCODER_CLICK_PIN, INPUT_PULLDOWN);//打开后反而关不了机, 一直会有21mA
+    // pinMode(ENCODER_CLICK_PIN, INPUT_PULLDOWN);// After enabling, device can't power off, always draws 21mA
 }
 void EncoderLPinInterrupt();
 void Encoder_Spin_init(void)
 {
-    pinMode(ENCODER_SPIN_R_PIN, INPUT_PULLUP);   
-    pinMode(ENCODER_SPIN_L_PIN, INPUT_PULLUP);  //这个我们设置为下拉 INPUT_PULLDOWN
-    //我们通过调用attachInterrupt函数将中断附加到引脚
-    //handleInterrupt 是中断触发后的触发函数
+    pinMode(ENCODER_SPIN_R_PIN, INPUT_PULLUP);
+    pinMode(ENCODER_SPIN_L_PIN, INPUT_PULLUP);  // We set this to pulldown INPUT_PULLDOWN
+    // We attach interrupt to pin by calling attachInterrupt function
+    // handleInterrupt is the callback function after interrupt trigger
 
     attachInterrupt(digitalPinToInterrupt(ENCODER_SPIN_L_PIN), EncoderLPinInterrupt, CHANGE);
 
@@ -72,16 +72,16 @@ void Function_Key_DeInit(void)
     pinMode(SQUELCH_PIN, INPUT_PULLDOWN);
 }
 
-/// @brief ptt按键状态
+/// @brief PTT button state
 /// @param  void
-/// @return true:按下; false:空闲
+/// @return true: pressed; false: idle
 bool PTTPress(void)
 {
     return !PTT_READ;
 }
-/// @brief a20接收状态
+/// @brief A20 receive state
 /// @param  void
-/// @return true:收到信号; false:空闲
+/// @return true: signal received; false: idle
 bool RcvSignal(void)
 {
     return !A002_SQ_READ;

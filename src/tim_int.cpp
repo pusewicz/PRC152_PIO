@@ -17,24 +17,24 @@ void Timer_Init(void)
     bsp_StartAutoTimer(TMR_KEY_SCAN,      TMR_PERIOD_20MS);
     bsp_StartAutoTimer(TMR_POS_BLINK,	  TMR_PERIOD_200MS);
     bsp_StartAutoTimer(TMR_RSSI_CTRL,     TMR_PERIOD_1S);
-    bsp_StartAutoTimer(TMR_VOLT_REFRESH,  TMR_PERIOD_3S); //定时检测电压
+    bsp_StartAutoTimer(TMR_VOLT_REFRESH,  TMR_PERIOD_3S); // Periodic voltage detection
 }
 
 void bsp_InitTimer(void)
 {
     uint8_t i;
 
-    /* 清零所有的软件定时器 */
+    /* Clear all software timers */
     for (i = 0; i < TMR_COUNT; i++)
     {
         s_tTmr[i].Count = 0;
         s_tTmr[i].PreLoad = 0;
         s_tTmr[i].Flag = 0;
-        s_tTmr[i].Mode = TMR_ONCE_MODE;	/* 缺省是一次性工作模式 */
+        s_tTmr[i].Mode = TMR_ONCE_MODE;	/* Default is one-shot mode */
     }
 }
 
-//获取运行次数
+// Get run count
 int32_t bsp_GetRunTime(void)
 {
     int32_t runtime;
@@ -48,7 +48,7 @@ int32_t bsp_GetRunTime(void)
     return runtime;
 }
 
-//启动"定时器"
+// Start timer
 void bsp_StartTimer(uint8_t _id, uint32_t _period)
 {
     if (_id >= TMR_COUNT)
@@ -66,7 +66,7 @@ void bsp_StartTimer(uint8_t _id, uint32_t _period)
     ENABLE_INT();  				
 }
 
-//启动自动填装重载值的"定时器"
+// Start auto-reload timer
 void bsp_StartAutoTimer(uint8_t _id, uint32_t _period)
 {
     if (_id >= TMR_COUNT)
@@ -83,7 +83,7 @@ void bsp_StartAutoTimer(uint8_t _id, uint32_t _period)
 
     ENABLE_INT();  			/*  */
 }
-//停止"定时器"
+// Stop timer
 void bsp_StopTimer(uint8_t _id)
 {
     if (_id >= TMR_COUNT)
@@ -101,7 +101,7 @@ void bsp_StopTimer(uint8_t _id)
     ENABLE_INT();  		/*  */
 }
 //
-//在程序中检查"定时器"的标志是否已经达到flag
+// Check if timer flag has reached target
 uint8_t bsp_CheckTimer(uint8_t _id)
 {
     if (_id >= TMR_COUNT)
@@ -121,7 +121,7 @@ uint8_t bsp_CheckTimer(uint8_t _id)
 }
 //
 
-//定时器中断中更新结构体数组的数值
+// Update struct array values in timer interrupt
 static void bsp_SoftTimerDec(SOFT_TMR *_tmr)
 {
     if (_tmr->Count > 0)

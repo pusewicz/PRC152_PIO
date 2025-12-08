@@ -13,9 +13,9 @@ const char *TAG_FLAG[] =
 
 CHAN_ARV chan_arv[ARV_MEM_COUNT] = {1, 0, 0, 1, 0, 0, 435.02500, 435.02500, "       "};
 
-nvs_handle PRC152handle;                 //储存空间打开后的操作句柄
-esp_err_t err;                           //操作结果返回值
-const char *PRC152MARK2 = "PRC152MARK2"; //储存空间名称
+nvs_handle PRC152handle;                 // Storage space operation handle after opening
+esp_err_t err;                           // Operation result return value
+const char *PRC152MARK2 = "PRC152MARK2"; // Storage space name
 
 #define LOG_THIS_PAGE_FUN 0
 #if LOG_THIS_PAGE_FUN
@@ -69,7 +69,7 @@ void Init_Storage(bool init)
         DATA_Init();
 }
 
-//修改标志位
+// Modify flag
 void set_Flag(int flag_number, uint8_t Flag)
 {
     err = nvs_set_u8(PRC152handle, TAG_FLAG[flag_number], Flag);
@@ -87,7 +87,7 @@ uint8_t get_Flag(int flag_number)
     return Flag;
 }
 
-//扫描添加
+// Scan add
 void set_Scan(uint8_t channel, uint8_t scan)
 {
 }
@@ -130,7 +130,7 @@ uint8_t load_ChanB(void)
     return chan;
 }
 
-//信道号
+// Channel number
 void save_CurrentChannel(uint8_t channel)
 {
     err = nvs_set_u8(PRC152handle, "CURRENTCHAN", channel);
@@ -146,7 +146,7 @@ uint8_t load_CurrentChannel(void)
 }
 //
 
-//步进
+// Step
 void save_Step(uint8_t step)
 {
     step = step < 3 ? step : 0;
@@ -163,7 +163,7 @@ uint8_t load_Step(void)
 }
 //
 
-//静噪
+// Squelch
 void save_Sql(uint8_t sql)
 {
     sql = sql < 9 ? sql : 1;
@@ -180,7 +180,7 @@ uint8_t load_Sql(void)
 }
 //
 
-//咪灵敏度
+// Mic sensitivity
 void save_MicLevel(uint8_t mic)
 {
     mic = mic <= 7 ? mic : 0;
@@ -197,7 +197,7 @@ uint8_t load_MicLevel(void)
 }
 //
 
-//音频输出
+// Audio output
 void save_AudioSelect(uint8_t audio)
 {
     audio = audio <= 2 ? audio : 0;
@@ -214,7 +214,7 @@ uint8_t load_AudioSelect(void)
 }
 //
 
-//加密
+// Encryption
 void save_ScramLevel(uint8_t scram)
 {
     scram = scram < 9 ? scram : 0;
@@ -232,7 +232,7 @@ uint8_t load_ScramLevel(void)
 }
 //
 
-//发射延时
+// TX timeout
 void save_Tot(uint8_t tot)
 {
     tot = tot < 10 ? tot : 0;
@@ -249,7 +249,7 @@ uint8_t load_Tot(void)
 }
 //
 
-//背光强度
+// Backlight brightness
 void save_Backlightness(uint8_t backlightness)
 {
     backlightness = backlightness <= 100 ? backlightness : 50;
@@ -266,7 +266,7 @@ uint8_t load_Backlightness(void)
 }
 //
 
-//背光时间  1:10s  0:常亮
+// Backlight time  1:10s  0:always on
 void save_LampTime(uint8_t lamptime)
 {
     err = nvs_set_u8(PRC152handle, "LAMPTIME", lamptime);
@@ -282,7 +282,7 @@ uint8_t load_LampTime(void)
 }
 //
 
-//对比度
+// Contrast
 void save_ScreenContrast(uint8_t screencontrast)
 {
     screencontrast = screencontrast < 7 ? screencontrast : 3;
@@ -299,7 +299,7 @@ uint8_t load_ScreenContrast(void)
 }
 //
 
-//六针头输出
+// 6-pin header output
 void save_VDO(uint8_t vdo)
 {
     err = nvs_set_u8(PRC152handle, "VDO", vdo);
@@ -315,7 +315,7 @@ uint8_t load_VDO(void)
 }
 //
 
-//全局音量
+// Global volume
 void save_OverVolume(uint8_t volume)
 {
     volume = volume <= 7 ? volume : 2;
@@ -333,7 +333,7 @@ uint8_t load_OverVolume(void)
 }
 //
 
-// PTT前置提示音
+// PTT pre-tone
 void save_PreTone(uint8_t pretone)
 {
     pretone = pretone < 2 ? pretone : 1;
@@ -351,7 +351,7 @@ uint8_t load_PreTone(void)
 }
 //
 
-// PTT结束提示音
+// PTT end-tone
 void save_EndTone(uint8_t endtone)
 {
     //    Serial.printf("change endtone:%d", endtone);
@@ -370,7 +370,7 @@ uint8_t load_EndTone(void)
 }
 //
 
-//收音机频率//870~1080
+// FM radio frequency // 870~1080
 void save_FMFreq(int32_t fm_freq)
 {
     fm_freq = (fm_freq < 870 || fm_freq > 1080) ? 885 : fm_freq;
@@ -386,7 +386,7 @@ int load_FMFreq(void)
     return fm_freq;
 }
 //
-// WiFi ssid和password
+// WiFi SSID and password
 int save_WIFIInfo(char *ssid, char *password)
 {
     const char *ssidtmp = ssid;
@@ -436,7 +436,7 @@ int load_WIFIInfo(char *ssid, char *password)
     return ESP_OK;
 }
 
-//空闲时间
+// Idle time
 uint8_t save_IdleTime2Sleep(uint8_t itts)
 {
     itts = itts < 3 ? itts : 0;
@@ -455,7 +455,7 @@ uint8_t load_IdleTime2Sleep(void)
 }
 //
 
-//信道数据保存
+// Channel data save
 void save_ChannelParameter(uint8_t chan, CHAN_ARV S)
 {
 
@@ -592,7 +592,7 @@ void load_ChannelParameterStr(uint8_t chan, char *L)
     //     return;
     // }
 }
-//数据初始化
+// Data initialization
 extern char host[WIFI_SHOW_SIZE];
 extern char password[WIFI_SHOW_SIZE];
 void DATA_Init(void)
@@ -632,7 +632,7 @@ void DATA_Init(void)
         set_Flag(FLAG_VU_SWITCH_ADDR, 1);
         set_Flag(FLAG_CF_SWITCH_ADDR, 0);
 
-        FeedDog(); //喂狗
+        FeedDog(); // Feed watchdog
 
         save_ChanA(1);
         save_ChanB(2);
@@ -659,10 +659,10 @@ void DATA_Init(void)
         sprintf((char *)chan_arv[TMP].NN, "%s", "UHF    ");
         save_ChannelParameter(100, chan_arv[TMP]);
 
-        LCD_ShowProcessBar(0, 3, 10); //以上数据占据总数据进度条的10%
+        LCD_ShowProcessBar(0, 3, 10); // Above data occupies 10% of total progress bar
 ////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef DEBUG
-        FeedDog(); //喂狗
+        FeedDog(); // Feed watchdog
         chan_arv[TMP].RX_FREQ = 136.02500;
         chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
         memcpy((char *)chan_arv[TMP].NN, "LOW 136", 7);
@@ -689,7 +689,7 @@ void DATA_Init(void)
         memcpy((char *)chan_arv[TMP].NN, "HIGH148", 7);
         chan_arv[TMP].POWER = 0;
         save_ChannelParameter(6, chan_arv[TMP]);
-        FeedDog(); //喂狗
+        FeedDog(); // Feed watchdog
         LCD_ShowProcessBar(0, 3, 10);
         chan_arv[TMP].RX_FREQ = 155.02500;
         chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
@@ -718,7 +718,7 @@ void DATA_Init(void)
         chan_arv[TMP].POWER = 0;
         save_ChannelParameter(12, chan_arv[TMP]);
 
-        FeedDog(); //喂狗
+        FeedDog(); // Feed watchdog
         LCD_ShowProcessBar(0, 3, 14);
 
         chan_arv[TMP].RX_FREQ = 400.02500;
@@ -747,7 +747,7 @@ void DATA_Init(void)
         memcpy((char *)chan_arv[TMP].NN, "HIGH425", 7);
         chan_arv[TMP].POWER = 0;
         save_ChannelParameter(18, chan_arv[TMP]);
-        FeedDog(); //喂狗
+        FeedDog(); // Feed watchdog
         LCD_ShowProcessBar(0, 3, 18);
         chan_arv[TMP].RX_FREQ = 435.02500;
         chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
@@ -775,7 +775,7 @@ void DATA_Init(void)
         memcpy((char *)chan_arv[TMP].NN, "HIGH455", 7);
         chan_arv[TMP].POWER = 0;
         save_ChannelParameter(24, chan_arv[TMP]);
-        FeedDog(); //喂狗
+        FeedDog(); // Feed watchdog
         LCD_ShowProcessBar(0, 3, 24);
         chan_arv[TMP].RX_FREQ = 465.02500;
         chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
@@ -804,7 +804,7 @@ void DATA_Init(void)
 
         for (i = 29; i < 100; i++)
         {
-            FeedDog(); //喂狗
+            FeedDog(); // Feed watchdog
             sprintf((char *)chan_arv[TMP].NN, "CH-%02d  ", i);
             save_ChannelParameter(i, chan_arv[TMP]);
             LCD_ShowProcessBar(0, 3, i);
@@ -816,7 +816,7 @@ void DATA_Init(void)
         memcpy((char *)chan_arv[TMP].NN, "AMA7500", 7);
         for (int i = 1; i < 21; i++)
         {
-            FeedDog(); //喂狗
+            FeedDog(); // Feed watchdog
             chan_arv[TMP].RX_FREQ = 409.75000 + (0.0125) * (i - 1);
             chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
             //			sprintf((void *)(chan_arv[TMP].NN+3), "%d", (int)((chan_arv[TMP].RX_FREQ*10000-4090000)));
@@ -829,7 +829,7 @@ void DATA_Init(void)
 
         for (int i = 0; i < 7; i++)
         {
-            FeedDog(); //喂狗
+            FeedDog(); // Feed watchdog
             chan_arv[TMP].RX_FREQ = 462.56250 + (0.0250) * i;
             chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
             //			sprintf((void *)chan_arv[TMP].NN, "%d", (int)(chan_arv[TMP].RX_FREQ*10000));
@@ -841,7 +841,7 @@ void DATA_Init(void)
 
         for (int i = 0; i < 7; i++)
         {
-            FeedDog(); //喂狗
+            FeedDog(); // Feed watchdog
             chan_arv[TMP].RX_FREQ = 467.56250 + (0.0250) * i;
             chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
             //			sprintf((void *)chan_arv[TMP].NN, "%d", (int)(chan_arv[TMP].RX_FREQ*10000));
@@ -853,7 +853,7 @@ void DATA_Init(void)
 
         for (int i = 0; i < 8; i++)
         {
-            FeedDog(); //喂狗
+            FeedDog(); // Feed watchdog
             chan_arv[TMP].RX_FREQ = 462.55000 + (0.0250) * i;
             chan_arv[TMP].TX_FREQ = chan_arv[TMP].RX_FREQ;
             //			sprintf((void *)chan_arv[TMP].NN, "%d", (int)(chan_arv[TMP].RX_FREQ*10000));
@@ -870,7 +870,7 @@ void DATA_Init(void)
 
         for (i = 43; i < 100; i++)
         {
-            FeedDog(); //喂狗
+            FeedDog(); // Feed watchdog
             sprintf((char *)chan_arv[TMP].NN, "CH-%02d  ", i);
             save_ChannelParameter(i, chan_arv[TMP]);
             LCD_ShowProcessBar(0, 3, i);

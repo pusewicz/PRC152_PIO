@@ -5,29 +5,29 @@
 extern void menuUpdate(void);
 void setup()
 {
-    UART1_Init(); //初始化串口
+    UART1_Init(); // Initialize serial port
 
-    CH423_Init(); // IIC初始化-->CH423初始化-->CH423控制的引脚初始化
+    CH423_Init(); // I2C init --> CH423 init --> CH423 controlled pins init
 
-    SPK_SWITCH(IN, OFF); //限制开机的杂音
+    SPK_SWITCH(IN, OFF); // Suppress startup noise
 
-    Key_Init(); //初始化按键:初始化编码器按键; 检测是否需要进入BOOT模式
+    Key_Init(); // Initialize keys: encoder button; check if BOOT mode is needed
 
-    Standby_Init(); //确认编码器是否为正常长按;长按则使能3.3V控制引脚  ////POWER_EN_SET;//
+    Standby_Init(); // Verify encoder long press; enable 3.3V control pin  ////POWER_EN_SET;//
 
-    // UART1_Init(); //初始化串口
-    ADC_Init();   //检测电压使用
-    Timer_Init(); //启动定时器处理 ADC检测电压程序 DAC输出电压定时器中断
+    // UART1_Init(); // Initialize serial port
+    ADC_Init();   // For voltage detection
+    Timer_Init(); // Start timer for ADC voltage detection and DAC output interrupt
 
-    //将控制引脚初始化,并设置状态, 避免出现错误IO状态
-    M62364_Init(); // m62364初始化-->禁止声音输出/关闭FM电源
+    // Initialize control pins and set states to avoid incorrect IO states
+    M62364_Init(); // M62364 init --> disable audio output / turn off FM power
 
     LCD_Init();
     PWM_Init();
     LCD_ShowPICALL(pic_HARRIS);
 
     Init_Storage(true);
-    enterSecondSystem(); // menuUpdate();    //信道设置需要内存初始化
+    enterSecondSystem(); // menuUpdate();    // Channel settings require memory initialization
 
     EN_GPIO_Init(); // POWER_EN_8_SET;//
 
@@ -48,6 +48,6 @@ void loop()
     VFO_Refresh();
     MY_GLOBAL_FUN();
     Encoder_process(Encoder_Switch_Scan(0));
-    Argument_process(Event_Matrix(Matrix_KEY_Scan(0))); //矩阵按键事件处理
-    KDU_Processor();                                    // KDU处理
+    Argument_process(Event_Matrix(Matrix_KEY_Scan(0))); // Matrix key event processing
+    KDU_Processor();                                    // KDU processing
 }

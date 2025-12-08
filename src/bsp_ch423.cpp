@@ -8,46 +8,46 @@ static unsigned char SaveCurrentOCH = 0x00;
 
 void CH423_Init()
 {
-    bsp_IIC_Init(); //IIC 引脚初始化
-    //置低电平
+    bsp_IIC_Init(); // I2C pin initialization
+    // Set low level
     CH423_WriteByte( CH423_OC_L_CMD);
     CLR_POWER_EN_8_CHAN;
     CLR_POWER_EN_12_CHAN;
-    
+
     CH423_WriteByte( CH423_SYS_CMD | BIT_IO_OE );
-    //置高电平  
+    // Set high level
     CH423_WriteByte( CH423_SET_IO_CMD | BIT_IO0_DAT | BIT_IO1_DAT | BIT_IO7_DAT);
     CH423_WriteByte( CH423_OC_H_CMD   | BIT_OC8_L_DAT);
 }
 
-void CH423_Write( unsigned short cmd )    // 写命令
+void CH423_Write( unsigned short cmd )    // Write command
 {
-    IIC_Start();    // 启动总线
+    IIC_Start();    // Start bus
     IIC_Send_Byte( ( ( unsigned char )( cmd>>7 ) & CH423_I2C_MASK ) | CH423_I2C_ADDR1 );
     IIC_Wait_Ack();
-    IIC_Send_Byte( ( unsigned char ) cmd );    // 发送数据
+    IIC_Send_Byte( ( unsigned char ) cmd );    // Send data
     IIC_Wait_Ack();
-    IIC_Stop();    // 结束总线 
+    IIC_Stop();    // End bus
 }
 
-void CH423_WriteByte( unsigned short cmd )    // 写出数据
+void CH423_WriteByte( unsigned short cmd )    // Write data
 {
-    IIC_Start();    // 启动总线
+    IIC_Start();    // Start bus
     IIC_Send_Byte( ( unsigned char )( cmd>>8 ) );
     IIC_Wait_Ack();
-    IIC_Send_Byte( ( unsigned char ) cmd );    // 发送数据
+    IIC_Send_Byte( ( unsigned char ) cmd );    // Send data
     IIC_Wait_Ack();
-    IIC_Stop();    // 结束总线  
+    IIC_Stop();    // End bus
 }
 
-unsigned char CH423_ReadByte()    // 读取数据
+unsigned char CH423_ReadByte()    // Read data
 {
     unsigned char din=0;
-    IIC_Start();    // 启动总线
-    IIC_Send_Byte( CH423_RD_IO_CMD );    // 此值为0x4D
+    IIC_Start();    // Start bus
+    IIC_Send_Byte( CH423_RD_IO_CMD );    // This value is 0x4D
     IIC_Wait_Ack();
-    din=IIC_Read_Byte(0);               // 读取数据
-    IIC_Stop();                         // 结束总线
+    din=IIC_Read_Byte(0);               // Read data
+    IIC_Stop();                         // End bus
     return( din );
 }
 

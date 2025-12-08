@@ -1,8 +1,8 @@
 #include "main.h"
 #include "bsp_json.h"
 
-extern u8 RSSI, SC,                         // SCERRN CONTRAST  CHAN = 0,
-    STEP, SQL, AUD, MIC, ENC, TOT, BL, VDO, // VDO:输出电源
+extern u8 RSSI, SC,                         // SCREEN CONTRAST  CHAN = 0,
+    STEP, SQL, AUD, MIC, ENC, TOT, BL, VDO, // VDO: output power
     VOLUME, PRE_TONE, END_TONE, ITTS,       // ITTS:Idle Time to Sleep
     MIC_LEVEL[3], WFM_LEVEL[8], A20_LEVEL[8];
 extern volatile char Home_Mode;
@@ -13,8 +13,8 @@ extern u8 FM_CHAN;
 
 extern ParameterValue_t parameterValue[ITEMSUM];
 
-/// @brief 	将需要发送的数据赋值给存储对应变量的数组 parameterValue
-/// @param 	null
+/// @brief  Assign data to be sent to the parameterValue array storing corresponding variables
+/// @param  null
 void writeOtherValue2buf()
 {
     sprintf(parameterValue[Jcf      ].valStr, "%d", get_Flag(FLAG_CF_SWITCH_ADDR));
@@ -53,8 +53,8 @@ void writeOtherValue2buf()
     sprintf(parameterValue[JselPos  ].valStr, "%03d", sele_pos);
 }
 
-/// @brief 	从数组内读取数据赋值给信道
-/// @param 	需要赋值的信道
+/// @brief  Read data from array and assign to channel
+/// @param  Channel to be assigned
 void readChanFromArray(CHAN_ARV_P B)
 {
     B->CHAN     = atoi(parameterValue[Jcurrent  ].valStr);
@@ -73,8 +73,8 @@ void readChanFromArray(CHAN_ARV_P B)
     //		printf("%s\n",parameterValue[i]);
 }
 
-/// @brief 	将需要发送的信道数据赋值给数组
-/// @param 	需要发送的信道
+/// @brief  Assign channel data to be sent to array
+/// @param  Channel to be sent
 void writeChanToArray(CHAN_ARV_P B)
 {
     sprintf(parameterValue[Jcurrent ].valStr, "%03d", B->CHAN);
@@ -94,7 +94,7 @@ void writeChanToArray(CHAN_ARV_P B)
 
 int readWriteValueToKDU(int Cmd)
 {
-    static int cf = get_Flag(FLAG_CF_SWITCH_ADDR); //辅助询问信道参数
+    static int cf = get_Flag(FLAG_CF_SWITCH_ADDR); // Auxiliary for querying channel parameters
     int fmfreq = 0;
     // parseRcvJson((char *)rx1_buf, parItem, parameterValue, ITEMSUM);
     parseRcvJson((char *)rx1_buf);
@@ -126,14 +126,14 @@ int readWriteValueToKDU(int Cmd)
     case _RELOAD:
         chan_arv[NOW].CHAN = atoi(parameterValue[Jcurrent].valStr);
         cf = atoi(parameterValue[Jcf].valStr);
-        if (cf == get_Flag(FLAG_CF_SWITCH_ADDR)) // cf模式不变
+        if (cf == get_Flag(FLAG_CF_SWITCH_ADDR)) // CF mode unchanged
         {
-            if (cf) // FREQ模式:  vu切换
+            if (cf) // FREQ mode: VU switch
                 set_Flag(FLAG_VU_SWITCH_ADDR, chan_arv[NOW].CHAN ? 1 : 0);
-            else // CHAN模式:	信道号切换
+            else // CHAN mode: channel number switch
                 save_CurrentChannel(chan_arv[NOW].CHAN);
         }
-        else //信道>><<频率
+        else // Channel <=> Frequency
         {
             set_Flag(FLAG_CF_SWITCH_ADDR, cf);
             if (cf)
@@ -166,18 +166,18 @@ int readWriteValueToKDU(int Cmd)
     case _SETHOMEMODE:
         Home_Mode = atoi(parameterValue[Jhomemode].valStr);
         if (Home_Mode == DUAL_MODE)
-            bsp_StartAutoTimer(TMR_DUAL_REFRESH, DUAL_SWITCH_TIME); //启动500ms切换一次频率
+            bsp_StartAutoTimer(TMR_DUAL_REFRESH, DUAL_SWITCH_TIME); // Start 500ms frequency switch timer
         else
         {
-            bsp_StopTimer(TMR_DUAL_REFRESH); //停止切换计时
+            bsp_StopTimer(TMR_DUAL_REFRESH); // Stop switch timer
             Set_A20(chan_arv[NOW], SQL);
         }
         break;
 
     case _SETCHAN:
         readChanFromArray(&chan_arv[NOW]);
-        //当KDU按键过快时:   这两放发送前,KDU反应会迟缓;
-        //                  放后面则无法处理紧接的数据而没返回给KDU造成链接丢失bug
+        // When KDU keys are pressed too fast: if these two are placed before send, KDU response will be slow;
+        //                                    if placed after, cannot process subsequent data and fail to respond to KDU causing connection loss bug
         save_ChannelParameter(chan_arv[NOW].CHAN, chan_arv[NOW]);
         Set_A20(chan_arv[NOW], SQL);
         break;
@@ -207,7 +207,7 @@ int readWriteValueToKDU(int Cmd)
             SPK_SWITCH(AUD, OFF);
             AUD = atoi(parameterValue[Jaudio].valStr);
 
-            if (RcvSignal()) //有信号,直接修改
+            if (RcvSignal()) // Signal present, modify directly
                 SPK_SWITCH(AUD, ON);
             else
             {
@@ -248,8 +248,8 @@ int readWriteValueToKDU(int Cmd)
         {
             VOLUME = atoi(parameterValue[Jvolume].valStr);
             save_OverVolume(VOLUME);
-            //需要注意收到信号/FM使用中的音量修改
-            if (WFM) //开着收音机的时候不中断输出，直接修改音量
+            // Note: volume change while receiving signal/FM in use
+            if (WFM) // When radio is on, don't interrupt output, modify volume directly
             {
                 RDA5807_ResumeImmediately();
                 if (!A002_SQ_READ)
@@ -279,14 +279,14 @@ int readWriteValueToKDU(int Cmd)
 
     case _SETFM:
         fmfreq = atoi(parameterValue[JfmFreq].valStr);
-        if (WFM != atoi(parameterValue[Jwfm].valStr)) //进行FM的开关
+        if (WFM != atoi(parameterValue[Jwfm].valStr)) // FM on/off toggle
         {
             WFM = atoi(parameterValue[Jwfm].valStr);
             RDA5807_Init(WFM);
             if (WFM == OFF && A002_SQ_READ && PTT_READ)
                 SPK_SWITCH(AUD, OFF);
         }
-        else //切换频率,并对频率进行判断
+        else // Switch frequency and validate
         {
             RDA5807_Set_Freq(fmfreq);
             if (RDA5807_ReadReg(0xb) & 0x0100)
@@ -297,7 +297,7 @@ int readWriteValueToKDU(int Cmd)
             else
                 FM_CHAN = 0;
         }
-        FM_FREQ = fmfreq; //轮询时需要
+        FM_FREQ = fmfreq; // Needed for polling
         break;
 
     case _SETDUALPOS:
@@ -314,16 +314,16 @@ int readWriteValueToKDU(int Cmd)
 
 
 
-/// @brief  处理数据指令, 回复数据
-/// @return 数据处理结束后的操作 NO_OPERATE无操作正常运行
+/// @brief  Process data command, reply data
+/// @return Operation after data processing: NO_OPERATE for normal operation
 int PRC152receiveProcess()
 {
-    static int NoVal2ExitCal = 0; // 3次超时接收, 返回主页面(无数据接收)
-    static int errVal2Exit = 0;   // 3次错误数据, 返回主页面(有接收数据,但是数据错误)
-    static int InsertKDUCal = 0;  // 3次正常接收进入KDU模式
+    static int NoVal2ExitCal = 0; // 3 timeout receives, return to main page (no data received)
+    static int errVal2Exit = 0;   // 3 error data, return to main page (received data but data error)
+    static int InsertKDUCal = 0;  // 3 normal receives to enter KDU mode
 
-    //1.确认插入期间, 接收倒计时超过4S, 清空计确认数值并返回
-    //2.检测到计时超过1.2S, 计算KDU退出值
+    // 1. During confirmation insert period, receive countdown exceeds 4S, clear confirmation value and return
+    // 2. Detected timer exceeds 1.2S, calculate KDU exit value
     if (bsp_CheckTimer(TMR_WAIT_KDU)) 
     {
         if (NoVal2ExitCal++ >= 2 || (InsertKDUCal>0 && InsertKDUCal<3))
@@ -355,7 +355,7 @@ int PRC152receiveProcess()
             NoVal2ExitCal = 0;
             errVal2Exit = 0;
             readWriteValueToKDU(getCmd);
-            if(KDU_INSERT == OFF)//尚未进入
+            if(KDU_INSERT == OFF)// Not yet entered
             {
                 // Serial.printf("\n\n[%d]:    NoVal2ExitCal:%d, InsertKDUCal:%d\n", __LINE__, NoVal2ExitCal, InsertKDUCal);
                 if(getCmd == _ASKALL || getCmd == _ASKA ||  getCmd == _ASKB)
@@ -377,7 +377,7 @@ int PRC152receiveProcess()
         /////////////////////////////////////////////////////////////////////////////////////////////////
         UART1_EnRCV();
         ClearShut();
-        if (errVal2Exit > 3) //数据连续错误达3次, 直接退出kdu处理程序
+        if (errVal2Exit > 3) // 3 consecutive data errors, directly exit KDU handler
         {
             Serial.printf("*****************errVal2Exit:%d*********************\n", 
                                  errVal2Exit);

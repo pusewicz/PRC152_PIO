@@ -5,10 +5,10 @@
 char host[WIFI_SHOW_SIZE] = "FCS_Configure";
 char password[WIFI_SHOW_SIZE] = "123456789";
 int x = 152;
-const byte DNS_PORT = 53;       // DNS端口号
-IPAddress apIP(192, 168, x, 1); // esp32-AP-IP地址
-DNSServer dnsServer;            //创建dnsServer实例
-WebServer server(80);           //创建WebServer
+const byte DNS_PORT = 53;       // DNS port number
+IPAddress apIP(192, 168, x, 1); // ESP32-AP-IP address
+DNSServer dnsServer;            // Create dnsServer instance
+WebServer server(80);           // Create WebServer
 
 extern double STEP_LEVEL[];
 extern u8
@@ -16,7 +16,7 @@ extern u8
     SQL,
     VOLUME;
 
-//打印wifi域名和IP
+// Display WiFi domain name and IP
 void LCD_ShowAddressIP(void)
 {
     LCD_ShowString0608(0, 1, "IP:", 1, 128);
@@ -30,13 +30,13 @@ void LCD_ShowAddressIP(void)
     LCD_ShowString0608(18, 1, IP_SHOW, 1, 128);
 }
 
-//访问主页回调函数
+// Homepage access callback function
 void handleRoot()
 {
     server.sendHeader("Connection", "close");
     server.send_P(200, "text/html", html_PGM);
 }
-//写频结束跳转界面
+// Write frequency finish redirect page
 void myHandleFinish()
 {
     server.sendHeader("Connection", "close");
@@ -48,7 +48,7 @@ void myHandleFinish()
     // ResetSystem();
     SHUT();
 }
-//升级完成跳转界面
+// Upgrade finish redirect page
 void myHandleUpdateFinish()
 {
     server.sendHeader("Connection", "close");
@@ -56,10 +56,10 @@ void myHandleUpdateFinish()
     Serial.println("UpdateFinish.........");
     delay(2000);
     // ResetSystem();
-    // ESP.restart(); //重启ESP32
+    // ESP.restart(); // Restart ESP32
     SHUT();
 }
-//升级处理界面
+// Upgrade handler
 void myHandleUpdate()
 {
     HTTPUpload &upload = server.upload();
@@ -98,7 +98,7 @@ void myHandleUpdate()
     }
 }
 
-//处理前端获取chan参数, 并将当前通道保存
+// Handle frontend get channel parameter, save current channel
 void myHandleGetChan()
 {
     StaticJsonDocument<512> jsonDoc;
@@ -121,7 +121,7 @@ void myHandleGetChan()
     // Serial.println(jsonStr);
     server.send(200, "text/plain", jsonStr);
 }
-//处理前端获取所有
+// Handle frontend get all parameters
 void myHandleGetAll()
 {
     StaticJsonDocument<512> jsonDoc;
@@ -161,11 +161,11 @@ void myHandleGetAll()
     String jsonStr;
     convertFromJson(jsonDoc, jsonStr);
 
-    Serial.println("结果:");
+    Serial.println("Result:");
     Serial.println(jsonStr);
     server.send(200, "text/plain", jsonStr);
 }
-//处理前端设置参数
+// Handle frontend set parameters
 void myHandleSet()
 {
     // String chan_str = server.arg("chan");
@@ -176,7 +176,7 @@ void myHandleSet()
     {
         Serial.println(server.arg(par).toFloat());
         chan_arv[TMP].RX_FREQ = server.arg(par).toFloat();
-        //可以等待tx返回的时候一起保存, 因为修改rx一定会同时修改tx, 反之则不然
+        // Can wait for tx return to save together, since modifying rx will always modify tx, but not vice versa
         // save_ChannelParameter(chan_arv[TMP].CHAN, chan_arv[TMP]);
     }
     else if (par.equals("tx_freq"))
@@ -268,7 +268,7 @@ void myHandleSet()
     server.send_P(200, "text/plain", "OK");
 }
 
-//解析前端返回的值, 并存入NVS
+// Parse frontend return value and store in NVS
 void parseAudioSet(int audioSet)
 {
     int aud = 0;
@@ -310,7 +310,7 @@ void parseNowMode(int nowMode)
         set_Flag(FLAG_VU_SWITCH_ADDR, nowMode - 1);
 }
 
-//初始化AP模式
+// Initialize AP mode
 void initSoftAP(void)
 {
     WiFi.mode(WIFI_AP);
@@ -321,46 +321,46 @@ void initSoftAP(void)
         Serial.println("ESP32 SoftAP is right\n");
     }
 }
-//初始化DNS服务器
+// Initialize DNS server
 void initDNS(void)
 {
     if (dnsServer.start(DNS_PORT, "*", apIP))
-    { //判断将所有地址映射到esp8266的ip上是否成功
+    { // Check if mapping all addresses to ESP8266 IP succeeded
         Serial.println("start dnsserver success.");
     }
     else
         Serial.println("start dnsserver failed.");
 }
-//初始化WebServer
+// Initialize WebServer
 void initWebServer_PGM(void)
 {
     // MDNS.begin(host);
 
-    //注册链接与回调函数
+    // Register links and callback functions
     // server.on("/",handleRoot);
-    //上面那行必须以下面这种格式去写否则无法强制门户
-    server.on("/", HTTP_GET, handleRoot); //设置主页回调函数
-    server.onNotFound(handleRoot);        //设置无法响应的http请求的回调函数
+    // The above line must be written in the format below for captive portal to work
+    server.on("/", HTTP_GET, handleRoot); // Set homepage callback function
+    server.onNotFound(handleRoot);        // Set callback for unhandled HTTP requests
 
-    server.on("/finish", HTTP_POST, myHandleFinish); //设置Post请求回调函数
+    server.on("/finish", HTTP_POST, myHandleFinish); // Set POST request callback function
     server.on("/update", HTTP_POST, myHandleUpdateFinish, myHandleUpdate);
 
     server.on("/set", HTTP_POST, myHandleSet);
     server.on("/getAll", HTTP_GET, myHandleGetAll);
     server.on("/getChan", HTTP_GET, myHandleGetChan);
 
-    server.begin(); //启动WHebServer
+    server.begin(); // Start WebServer
     Serial.println("WebServer started!");
     // MDNS.addService("http", "tcp", 80);
     // Serial.printf("Ready! Open http://%s.local in your browser\n", host);
 }
-//         关闭wifi
+// Stop WiFi
 void stopWIFIServer(void)
 {
     dnsServer.stop();
     server.stop();
     Serial.println("****************stopWIFIServer******************");
-    // Serial.printf("WIFI softAPdisconnect:%d\n\n", WiFi.softAPdisconnect());//常在线,可重复开WiFi
+    // Serial.printf("WIFI softAPdisconnect:%d\n\n", WiFi.softAPdisconnect());// Always online, can reopen WiFi
     WiFi.mode(WIFI_OFF);
 }
 extern int NEED_RESTART;
@@ -405,7 +405,7 @@ void myHandleGetNow()
 }
 void myHandlePreP()
 {
-    if (get_Flag(FLAG_CF_SWITCH_ADDR)) //频率模式
+    if (get_Flag(FLAG_CF_SWITCH_ADDR)) // Frequency mode
     {
         if (get_Flag(FLAG_VU_SWITCH_ADDR)) // U
         {
@@ -425,7 +425,7 @@ void myHandlePreP()
         chan_arv[NOW].TX_FREQ = chan_arv[NOW].RX_FREQ;
         save_ChannelParameter(chan_arv[NOW].CHAN, chan_arv[NOW]);
     }
-    else //信道模式
+    else // Channel mode
     {
         if (++chan_arv[NOW].CHAN > 99)
             chan_arv[NOW].CHAN = 1;
@@ -457,7 +457,7 @@ void myHandlePreN()
         chan_arv[NOW].TX_FREQ = chan_arv[NOW].RX_FREQ;
         save_ChannelParameter(chan_arv[NOW].CHAN, chan_arv[NOW]);
     }
-    else //信道模式
+    else // Channel mode
     {
         if (--chan_arv[NOW].CHAN < 1)
             chan_arv[NOW].CHAN = 99;
@@ -488,8 +488,8 @@ void myHandleSwitch()
     parseNowMode(server.arg(par).toInt());
 
 Serial.printf("myHandleSwitch:%d\n", server.arg(par).toInt());
-    //重新载入数据
-    if (get_Flag(FLAG_CF_SWITCH_ADDR)) //频率模式
+    // Reload data
+    if (get_Flag(FLAG_CF_SWITCH_ADDR)) // Frequency mode
     {
         if (get_Flag(FLAG_VU_SWITCH_ADDR))
             chan_arv[NOW].CHAN = 100;
@@ -501,14 +501,14 @@ Serial.printf("myHandleSwitch:%d\n", server.arg(par).toInt());
 
     load_ChannelParameter(chan_arv[NOW].CHAN, &chan_arv[NOW]);
     Set_A20(chan_arv[NOW], SQL);
-    myHandleGetNow(); //发送数据回客户端
+    myHandleGetNow(); // Send data back to client
 }
 
 void initWebServer_RCU(void)
 {
-    //设置主页回调函数
+    // Set homepage callback function
     server.on("/", HTTP_GET, handleRoot_RCU);
-    server.onNotFound(handleRoot_RCU); //设置无法响应的http请求的回调函数
+    server.onNotFound(handleRoot_RCU); // Set callback for unhandled HTTP requests
 
     server.on("/getNow", HTTP_POST, myHandleGetNow);
 
@@ -518,7 +518,7 @@ void initWebServer_RCU(void)
     server.on("/VOL_P", HTTP_POST, myHandleVolP);
     server.on("/VOL_N", HTTP_POST, myHandleVolN);
 
-    server.begin(); //启动WHebServer
+    server.begin(); // Start WebServer
 
     Serial.println("RCU started!");
 }
@@ -584,18 +584,18 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
     unsigned char
         src[maxLimit] = {32},
         key_old = MATRIX_RESULT_ERROR,
-        result_matrix = MATRIX_RESULT_ERROR, //当前触发按键
-        locate = 0,                          //当前光标位置
-        flag_modifyLocate_change = 0,        //修改的位置改变, 用作刷新press_times
-        flag_selectLocate_change = 1,        //选中的位置改变, 用作刷新光标显示
-        flag_selectBit = 0,                  //编码器使用：当前模式为调节位置/设置字符
-        press_times = 0,                     //当前按键按压次数
-        clear = 0;                           //编辑栏清空标志，0未清空，1为清空
+        result_matrix = MATRIX_RESULT_ERROR, // Current triggered key
+        locate = 0,                          // Current cursor position
+        flag_modifyLocate_change = 0,        // Modified position changed, used to refresh press_times
+        flag_selectLocate_change = 1,        // Selected position changed, used to refresh cursor display
+        flag_selectBit = 0,                  // Encoder use: current mode is position adjust/set character
+        press_times = 0,                     // Current key press count
+        clear = 0;                           // Edit bar clear flag, 0=not cleared, 1=cleared
 
     memset(src, 0, maxLimit);
     sprintf((char *)src, "%s", dst);
 
-    if (maxLimit == 7) //这个是设置信道别名的
+    if (maxLimit == 7) // This is for setting channel nickname
     {
         LCD_ShowString0608(0, 2, "CN:", 1, 18);
         LCD_ShowPIC0608(60, 2, 0, 1);
@@ -622,7 +622,7 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
 
         switch (Encoder_Switch_Scan(0))
         {
-        case key_click: //编码器确认始终为：确认当前位置的字符设置
+        case key_click: // Encoder confirm: always confirms character setting at current position
             flag_selectBit = !flag_selectBit;
             break;
 
@@ -646,7 +646,7 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
             break;
         }
 
-        if (flag_selectBit == 0) //编码器切换为调节位置
+        if (flag_selectBit == 0) // Encoder switched to position adjustment
         {
             if (TIMES != 0)
             {
@@ -657,7 +657,7 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
                 flag_selectLocate_change = 1;
             }
         }
-        else //编码器设置别名
+        else // Encoder set nickname
         {
             if (TIMES > 0)
             {
@@ -680,9 +680,9 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
         switch (result_matrix)
         {
         case MATRIX_RESULT_CLR:
-            if (clear) //已清空，返回初值
+            if (clear) // Already cleared, return to initial value
                 return NO_OPERATE;
-            else //未清空，清空编辑栏
+            else // Not cleared, clear edit bar
             {
                 memset(src, 0, sizeof(src));
                 flag_selectLocate_change = 1;
@@ -733,7 +733,7 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
         case MATRIX_RESULT_LEFT:
             locate--;
             flag_selectLocate_change = 1;
-            flag_selectBit = 0; //按键切换位置后，编码器旋转功能改为切换位置
+            flag_selectBit = 0; // After key position switch, encoder rotation changes to position switch
             if (locate > maxLimit - 1)
                 locate = maxLimit - 1;
             break;
@@ -741,13 +741,13 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
         case MATRIX_RESULT_RIGHT:
             locate++;
             flag_selectLocate_change = 1;
-            flag_selectBit = 0; //按键切换位置后，编码器旋转功能改为切换位置
+            flag_selectBit = 0; // After key position switch, encoder rotation changes to position switch
             if (locate > maxLimit - 1)
                 locate = 0;
             break;
         };
 
-         //光标位置修改
+         // Cursor position modification
         if (flag_selectLocate_change)
         {
             flag_selectLocate_change = 0;
@@ -759,7 +759,7 @@ int inputString(int l, int p, char *dst, int maxLimit, int minLimit)
             LCD_ShowString0608(l, p, (char *)src, 1, l + maxLimit * 6);
 
             if (src[locate])
-                LCD_ShowAscii0608(l + locate * 6, p, src[locate], 0); // 显示当前选中
+                LCD_ShowAscii0608(l + locate * 6, p, src[locate], 0); // Display current selection
                 
             else
                 LCD_ShowAscii0608(l + locate * 6, p, ' ', 0);
@@ -794,15 +794,15 @@ int modifyWiFiInfo(int mode)
     bsp_StartAutoTimer(TMR_OUT_CTRL, TMR_PERIOD_8S);
     while (1)
     {
-        FeedDog();                        //喂狗
-        if (bsp_CheckTimer(TMR_OUT_CTRL)) // 8秒无操作自动返回
+        FeedDog();                        // Feed watchdog
+        if (bsp_CheckTimer(TMR_OUT_CTRL)) // 8 seconds no operation auto return
         {
             bsp_StopTimer(TMR_OUT_CTRL);
             return BACK2MAIN;
         }
         matrix_result = Matrix_KEY_Scan(0);
         if (matrix_result != MATRIX_RESULT_ERROR)
-            reloadTimer(TMR_OUT_CTRL); //按键重置计时
+            reloadTimer(TMR_OUT_CTRL); // Key press resets timer
         switch (matrix_result)
         {
         case MATRIX_RESULT_8:
@@ -842,7 +842,7 @@ int modifyWiFiInfo(int mode)
 
         if (TIMES != 0)
         {
-            reloadTimer(TMR_OUT_CTRL); //按键重置计时
+            reloadTimer(TMR_OUT_CTRL); // Key press resets timer
             selectPos = (selectPos + 1) % 2;
             // selectPos = (selectPos - 1 + 2) % 2;
             TIMES = 0;
@@ -853,11 +853,11 @@ int modifyWiFiInfo(int mode)
             ENSURE = 0;
             switch (selectPos)
             {
-            case 0: //直接进入WiFi RCU/PGM
+            case 0: // Directly enter WiFi RCU/PGM
                 // Serial.printf("mssid:%s, mpassword:%s\n", mssid, mpassword);
                 break;
 
-            case 1: //修改WiFi
+            case 1: // Modify WiFi
                 while (1)
                 {
                     LCD_Clear(EDITZONE32);
@@ -866,7 +866,7 @@ int modifyWiFiInfo(int mode)
                     Serial.printf("mssid:%s\n", mssid);
                     if (ret == BACK2MAIN)
                         return BACK2MAIN;
-                    else //不管是否操作, 均进入
+                    else // Regardless of operation, proceed
                     {
                         if (ret == ENT2LAST)
                             falg_needSave = true;
@@ -875,7 +875,7 @@ int modifyWiFiInfo(int mode)
                         ret = inputString(12, 2, mpassword, WIFI_SHOW_SIZE, 8);
                         // Serial.printf("mpassword:%s\n", mpassword);
                         if (ret == NO_OPERATE)
-                            continue; //回到修改ssid
+                            continue; // Return to modify ssid
                         else if (ret == BACK2MAIN)
                             return BACK2MAIN;
                         else

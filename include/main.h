@@ -11,7 +11,7 @@
 #include "bsp_timer.h"
 #include "bsp_m62364.h"
 #include "bsp_storage.h"
-#include "bsp_device.h" //Sleep Init
+#include "bsp_device.h" // Sleep Init
 #include "bsp_MatrixKeyBoard.h"
 
 #include "lcd.h"
@@ -23,79 +23,79 @@
 
 #if FM_EN
 #include "rda5807.h"
-extern volatile u8 WFM; // FM开关
+extern volatile u8 WFM; // FM switch
 #endif
 
-extern int TIMES; //记录编码器操作
+extern int TIMES; // Record encoder operation
 
 void VFO_Load_Data(void);
-void VFO_Clear(void);   //主界面初始化
-void VFO_Refresh(void); //主页界面刷新
+void VFO_Clear(void);   // Main page initialization
+void VFO_Refresh(void); // Main page refresh
 
 void Encoder_process(u8 operate);
-u8 Event_Matrix(u8 matrix_key); //主界面矩阵按键触发事件检测 0：不做修改， 1：重载  2：保存
+u8 Event_Matrix(u8 matrix_key); // Main page matrix key trigger event detection 0:no change, 1:reload, 2:save
 void Argument_process(u8 key_pro_ret);
 
-int MY_GLOBAL_FUN(void); //全局处理函数
-int PTT_Control(void);   //按下或松开PTT后只执行一次的代码
+int MY_GLOBAL_FUN(void); // Global processing function
+int PTT_Control(void);   // Code executed only once after PTT press/release
 void SQ_Read_Control(void);
 void SQUELCH_Contol(void);
 
 int readWriteValueToKDU(int Cmd);
 int PRC152receiveProcess(void);
 int KDUCheck(void);            //
-int KDU_Processor(void);       // KDU数据交互
+int KDU_Processor(void);       // KDU data interaction
 
-void VOL_Reflash(int operate); //音量设置
-void A20_CALLBACK(void);       // A20数据交互,必须处理了才有a20数据返回
-void Switch_Dual_Chan(void);   //双守模式下双信道切换
-void SetNowChanSql0(u8 on);    //开关常静噪状态
-//主界面功能选择
-void ShortCut_Menu(void);           //主界面快捷设置
-void ShortCut_MICGAIN_Select(void); //主界面快捷设置mic灵敏度
-void ShortCut_FM_Select(void);      //主界面快捷开关收音机
-void ShortCut_CHAN_Select(void);    //主界面信道切换
-int Lock_Screen_KeyBoard(void);     //锁屏锁盘
+void VOL_Reflash(int operate); // Volume setting
+void A20_CALLBACK(void);       // A20 data interaction, must process to get A20 data return
+void Switch_Dual_Chan(void);   // Dual-watch mode channel switch
+void SetNowChanSql0(u8 on);    // Toggle constant squelch state
+// Main page function selection
+void ShortCut_Menu(void);           // Main page shortcut settings
+void ShortCut_MICGAIN_Select(void); // Main page shortcut mic sensitivity
+void ShortCut_FM_Select(void);      // Main page shortcut FM radio toggle
+void ShortCut_CHAN_Select(void);    // Main page channel switch
+int Lock_Screen_KeyBoard(void);     // Lock screen/keyboard
 
-//收发设置
+// TX/RX settings
 void RT_Menu(void);
 void RT_Menu_Clear(void);
 int RT_FREQ_Set(int x, int y, double *vfo_freq_temp, int vu_switch);
-int RT_SubVoice_Set(int row, int subvoice);               //亚音设置
-int RT_SubVoice_Matrix_Menu_Select(int subvoice);         //矩阵亚音设置
-int RT_TX_POWER_Set(int power_temp);                      //发射功率选择
-int RT_GBW_Set(int gbw_temp);                             //带宽选择
-int RT_NICKNAME_Set(u8 current_channel, char nn_temp[7]); //别名设置
-void RT_CHAN_Switch(void);                                //信道号切换
+int RT_SubVoice_Set(int row, int subvoice);               // Sub-audio tone setting
+int RT_SubVoice_Matrix_Menu_Select(int subvoice);         // Matrix sub-audio tone setting
+int RT_TX_POWER_Set(int power_temp);                      // TX power selection
+int RT_GBW_Set(int gbw_temp);                             // Bandwidth selection
+int RT_NICKNAME_Set(u8 current_channel, char nn_temp[7]); // Nickname setting
+void RT_CHAN_Switch(void);                                // Channel number switch
 
-//按键2
+// Key 2
 void Light_Mode_Set(void);
 
-//按键5:初始化菜单
+// Key 5: Initialize menu
 int Zeroize_All(void);
 void Zero_Menu(void);
 
-//按键7 OPTION菜单
+// Key 7 OPTION menu
 void OPTION_Menu(void);
-void Key_Test(void); //测试按键
+void Key_Test(void); // Test keys
 
-//按键8 PGM菜单
+// Key 8 PGM menu
 void PGM_Menu(void);
 
-int PGM_AUDIO_Select(u8 row);   //音频选通并设置咪灵敏度
-int PGM_SQL_Set(u8 row);        //静噪等级
-int PGM_STEP_Set(u8 row);       //步进
-int PGM_ENCRPY_Set(u8 row);     //加密
-int PGM_TOT_Set(u8 row);        //发射限时
-int PGM_LAMP_TIME_Set(u8 row);  //背光灯时长
-int PGM_POWEROUT_Set(u8 row);   //六针头电源输出
-int PGM_TONE_Select(u8 row);    //提示音设置
-int PGM_RTControl(u8 row);      // wifi实时控制
-int PGM_IdleTime2Sleep(u8 row); //空闲监测时间设置
+int PGM_AUDIO_Select(u8 row);   // Audio select and mic sensitivity setting
+int PGM_SQL_Set(u8 row);        // Squelch level
+int PGM_STEP_Set(u8 row);       // Step
+int PGM_ENCRPY_Set(u8 row);     // Encryption
+int PGM_TOT_Set(u8 row);        // TX timeout
+int PGM_LAMP_TIME_Set(u8 row);  // Backlight duration
+int PGM_POWEROUT_Set(u8 row);   // 6-pin header power output
+int PGM_TONE_Select(u8 row);    // Tone setting
+int PGM_RTControl(u8 row);      // WiFi real-time control
+int PGM_IdleTime2Sleep(u8 row); // Idle detection time setting
 
 
-void SHUT(void); //关闭所有功能
-double checkFreqFloat(double freq_buf); //校验
+void SHUT(void); // Shutdown all functions
+double checkFreqFloat(double freq_buf); // Validation
 
 // void Update_Check(void);			//IAP
 

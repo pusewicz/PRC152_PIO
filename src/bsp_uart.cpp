@@ -3,8 +3,8 @@
 #include "bsp_conio.h"
 
 
-volatile uint16_t rx1_len = 0;                                                   //接收数据长度
-volatile unsigned char rx1_buf[USART1_BUF_SIZE] = {0}, usart1_recv_end_flag = 0; //接收缓冲区//接收标志位
+volatile uint16_t rx1_len = 0;                                                   // Receive data length
+volatile unsigned char rx1_buf[USART1_BUF_SIZE] = {0}, usart1_recv_end_flag = 0; // Receive buffer // Receive flag
 volatile unsigned char rx2_buf[USART2_BUF_SIZE] = {0}, usart2_recv_end_flag = 1, rx2_len = 0;
 
 void bsp_UART1_Init(int baud)
@@ -12,18 +12,18 @@ void bsp_UART1_Init(int baud)
     Serial.begin(baud);
     delay_ms(50);
 }
-void UART1_EnRCV(void) //启动串口1接收
+void UART1_EnRCV(void) // Enable UART1 receive
 {
     memset((char *)rx1_buf, 0, sizeof(char) * (USART1_BUF_SIZE - 1));
 }
-int UART1_getRcvFlag(void) //判断接收标志位
+int UART1_getRcvFlag(void) // Check receive flag
 {
     return (Serial.available());
 }
-/// @brief  等待数据据接收完成
+/// @brief  Wait for data reception to complete
 /// @param  null
-/// @return 数据长度
-int UART1_dataPreProcess(void) //数据预处理
+/// @return Data length
+int UART1_dataPreProcess(void) // Data preprocessing
 {
     int i = 0;
     memset((char *)rx1_buf, 0, sizeof(char) * (USART1_BUF_SIZE - 1));
@@ -51,7 +51,7 @@ void bsp_UART2_Init(int baud)
 
 void bsp_UART2_DeInit(void)
 {
-    Serial1.end();      //必不可少
+    Serial1.end();      // Essential
     pinMode(DAC_RX_PIN, OUTPUT);
 }
 
@@ -101,8 +101,8 @@ void UART2_Send_Message(char s[], int size)
         UART2_Put_Char(s[i]);
 }
 
-/*******************模块相关函数*****************/
-//设置主要收发参数
+/*******************Module Related Functions*****************/
+// Set main TX/RX parameters
 void Set_A20(CHAN_ARV set, unsigned char sq)
 {
     unsigned char a002_send_buff[47] = "AT+DMOSETGROUP=1,436.025,436.025,000,1,001,1\r\n";
@@ -126,7 +126,7 @@ void Set_A20(CHAN_ARV set, unsigned char sq)
     //	printf("\nSET TIME: %d\n", key_timer_cnt1);
 }
 
-//设置控制参数
+// Set control parameters
 void Set_A20_MIC(unsigned char miclvl, unsigned char scramlvl, unsigned char tot)
 {
     unsigned char i = 0, a002_send_buff[21] = "AT+DMOSETMIC=1,0,0\r\n";
@@ -149,7 +149,7 @@ void Set_A20_SavePower(bool enable)
         UART2_Put_Char(a002_send_buff[i]);
 }
 
-//获取信号强度
+// Get signal strength
 int Get_A20_RSSI(void)
 {
     unsigned char a002_send_buff[17] = "AT+DMOREADRSSI\r\n";
@@ -167,7 +167,7 @@ int Get_A20_RSSI(void)
     }
     
     D_printf("wait time:%dms\n", i);
-    delay_ms(50);//不能删！没有这个接收不完整！20ms
+    delay_ms(50);// Do not delete! Reception is incomplete without this! 20ms
     if (Serial1.available())
     {
         i = 0;
@@ -206,7 +206,7 @@ int Get_A20_RSSI(void)
     return rssi;
 }
 
-void A002_CALLBACK(void) // A20数据接收处理
+void A002_CALLBACK(void) // A20 data receive processing
 {
     // if (usart2_recv_end_flag)
     if (Serial1.available())
@@ -220,17 +220,17 @@ void A002_CALLBACK(void) // A20数据接收处理
 
         // Serial.printf("length:%d, Serail1:%s\n", i, rx2_buf);
 
-        if (strstr((const char *)rx2_buf, "+DMOCONNECT:0")) //握手成功
+        if (strstr((const char *)rx2_buf, "+DMOCONNECT:0")) // Handshake successful
             D_printf("Connected!!\n");
-        if (strstr((const char *)rx2_buf, "+DMOSETGROUP:0")) //工作参数写入成功
+        if (strstr((const char *)rx2_buf, "+DMOSETGROUP:0")) // Work parameters written successfully
             D_printf("Successfully Write!\n");
-        if (strstr((const char *)rx2_buf, "+DMOSETMIC:0")) // MIC参数设置成功
+        if (strstr((const char *)rx2_buf, "+DMOSETMIC:0")) // MIC parameters set successfully
             D_printf("Successfully Set MIC!\n");
-        if (strstr((const char *)rx2_buf, "+DMOSETVOX:0")) //声控设置成功
+        if (strstr((const char *)rx2_buf, "+DMOSETVOX:0")) // VOX set successfully
             D_printf("Successfully Set VOX!\n");
-        if (strstr((const char *)rx2_buf, "+DMOAUTOPOWCONTR:0")) //省电模式成功
+        if (strstr((const char *)rx2_buf, "+DMOAUTOPOWCONTR:0")) // Power save mode successful
             D_printf("Successfully Set AUTOPOWCONTR!\n");
-        if (strstr((const char *)rx2_buf, "+ DMOSETVOLUME:0")) //省电模式成功
+        if (strstr((const char *)rx2_buf, "+ DMOSETVOLUME:0")) // Volume set successful
             D_printf("Successfully Set VOLUME!\n");
 
         // usart2_recv_end_flag = 0;
