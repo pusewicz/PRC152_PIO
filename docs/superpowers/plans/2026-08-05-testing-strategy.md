@@ -40,6 +40,8 @@ Serial request: one line, `>` + command + `\n`. Serial response: one line, `##` 
 | `>enc click\|double\|long\|cw\|ccw` | `{"ok":1}` — click/double/long queued for `Encoder_Switch_Scan`; cw/ccw adjust `TIMES` immediately |
 | any error | `{"ok":0,"err":"<short reason>"}` |
 
+Free-text string fields in hand-rolled JSON responses (`get`'s `val`, `dump chan`'s `nn`) must be JSON-escaped (`"`, `\`, and control characters — a small `dc_json_escape` helper), because nicknames are unfiltered user text; registry-serialized responses (`dump params`) escape via ArduinoJson already. `set` deliberately performs no range validation — it feeds the same apply path a physical KDU does (documented in the HIL README; tests use in-range values).
+
 Public API (`include/devconsole.h`), stubs compiled when `DEVCONSOLE` is undefined:
 
 ```c
@@ -995,7 +997,7 @@ def test_screen_render_smoke(dc):
 
 - [ ] **Step 4: Write `requirements.txt` and `README.md`**
 
-`requirements.txt`: `pyserial`, `requests`, `pytest` (one per line). README covers: flashing the dev env (`pio run -e esp32-s2-saola-1-dev -t upload --upload-port <port>`); running over serial (`pytest --serial /dev/cu.usbserial-*`) vs WiFi (join SSID `FCS_Configure`, password `123456789`, then `pytest --wifi 192.168.152.1`); serial monitor must be closed while testing over serial; do NOT attach a physical KDU during serial HIL (unarbitrated interleaving); `>enc long` powers the radio off; leaving the on-radio WiFi menus kills the WiFi transport until reboot; these tests require the radio and are never run in CI.
+`requirements.txt`: `pyserial`, `requests`, `pytest` (one per line). README covers: flashing the dev env (`pio run -e esp32-s2-saola-1-dev -t upload --upload-port <port>`); running over serial (`pytest --serial /dev/cu.usbserial-*`) vs WiFi (join SSID `FCS_Configure`, password `123456789`, then `pytest --wifi 192.168.152.1`); serial monitor must be closed while testing over serial; do NOT attach a physical KDU during serial HIL (unarbitrated interleaving); `>enc long` powers the radio off; leaving the on-radio WiFi menus kills the WiFi transport until reboot; `>set` performs no range validation (it feeds the radio's apply path with KDU-level trust) — always use in-range values; these tests require the radio and are never run in CI.
 
 - [ ] **Step 5: Syntax-verify without hardware, then commit**
 
