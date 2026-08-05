@@ -72,8 +72,12 @@ jobs:
           PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
         run: pio run
 
+      # Plain `pio run`, not `--target size` -- that target runs a different
+      # SCons step (raw text/data/bss table) and never prints the RAM:/Flash:
+      # percentage lines. The prior Build step already compiled everything,
+      # so this re-run is an incremental no-op that just reports size.
       - name: Report size
-        run: pio run --target size | tee size-${{ matrix.variant }}.txt
+        run: pio run | tee size-${{ matrix.variant }}.txt
 
       - name: Upload firmware
         if: matrix.variant == 'release'
