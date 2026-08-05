@@ -53,8 +53,9 @@ unsigned char DevConsole_TakeInjectedEnc(void); // 0 (key_idle) if none
 
 Serial arbitration (the load-bearing detail): `Serial` (UART0/USB) is BOTH the flashing/debug port and the KDU port — `bsp_UART1_Init` at `src/bsp_uart.cpp:10` runs `Serial.begin`, and `PRC152receiveProcess` (`src/handleData.cpp:319`) drains it whenever bytes are available. KDU traffic is JSON starting with `{`. Console traffic starts with `>`. Rules:
 
-- `DevConsole_Poll()` consumes from `Serial` only when `Serial.peek() == '>'`, then consumes to `\n` across polls (line state machine — once a line is started, consume available bytes regardless of content until newline).
-- `PRC152receiveProcess` gets a guard at the top of its `UART1_getRcvFlag()` branch: in DEVCONSOLE builds, if `Serial.peek() == '>'`, return `NO_OPERATE` (leave the bytes for the console).
+- `DevConsole_Poll()` consumes from `Serial` only when `Serial.peek() == '>'`, then consumes to `\n` across polls (line state machine — once a line is started, consume available bytes regardless of content until newline). A partial line that receives no new bytes for 500 ms is aborted (state and buffer reset) so a dead client cannot wedge the KDU path.
+- `PRC152receiveProcess` gets a guard at the top of its `UART1_getRcvFlag()` branch: in DEVCONSOLE builds, if `Serial.peek() == '>'` **or the console is mid-line** (`DevConsole_LineInProgress()` returns nonzero), return `NO_OPERATE` (leave the bytes for the console). The mid-line condition closes the fragmentation race where a console line split across serial chunks loses its `>` marker after the first poll.
+- `int DevConsole_LineInProgress(void)` joins the public API in `devconsole.h` (ship-build inline stub returns 0).
 - A physical KDU and an HIL client must not be attached simultaneously (interleaving mid-frame is unarbitrated); document in `tools/hil/README.md`.
 
 ---
