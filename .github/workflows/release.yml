@@ -1,0 +1,129 @@
+name: Release
+
+# Tag a release with the firmware version, e.g.:
+#   git tag v2.2.5507 && git push origin v2.2.5507
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # needed to create the release
+
+# `shell: bash` gives `bash -eo pipefail`; the default `bash -e` would let a
+# failure inside a pipeline pass silently.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check platformio.ini and FCS152_KDU.h agree
+        run: python3 .github/scripts/check_version_sync.py
+
+      # A tag that disagrees with the firmware's own version would publish a
+      # release whose binary reports something else on the radio.
+      - name: Check tag matches firmware version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          fw=$(sed -n 's/^[[:space:]]*custom_prog_version[[:space:]]*=[[:space:]]*//p' platformio.ini)
+          fw_num=$(printf '%s' "$fw" | tr -cd '0-9.')
+          tag_num=$(printf '%s' "$tag" | tr -cd '0-9.')
+          echo "tag=$GITHUB_REF_NAME -> $tag_num ; custom_prog_version=$fw -> $fw_num"
+          if [ "$tag_num" != "$fw_num" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match custom_prog_version $fw"
+            exit 1
+          fi
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.cache/pip
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: ${{ runner.os }}-pio-
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade platformio
+
+      - name: Build
+        run: pio run
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          cp .pio/build/esp32-s2-saola-1/*.bin dist/
+          cp .pio/build/esp32-s2-saola-1/*.elf dist/
+          # boot_app0.bin ships with the framework rather than being built, but
+          # a from-scratch flash needs it -- include it so the release is
+          # self-contained instead of silently incomplete.
+          boot_app0=$(find ~/.platformio/packages/framework-arduinoespressif32 \
+                        -name boot_app0.bin -print -quit)
+          if [ -n "$boot_app0" ]; then
+            cp "$boot_app0" dist/
+          else
+            echo "::warning::boot_app0.bin not found; full-flash instructions will be incomplete"
+          fi
+          ls -l dist
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pio run --target size > size.txt || true
+          app=$(basename "$(ls dist/PRC152-N*.bin)")
+          {
+            echo "Firmware build for \`$GITHUB_REF_NAME\` (ESP32-S2)."
+            echo
+            echo "### Flashing"
+            echo
+            echo "Easiest and least error-prone -- PlatformIO knows every offset:"
+            echo
+            echo '```'
+            echo "pio run -t upload"
+            echo '```'
+            echo
+            echo "**Updating the application only** on a radio that already has a"
+            echo "bootloader (the usual case):"
+            echo
+            echo '```'
+            echo "esptool.py --chip esp32s2 write_flash 0x10000 $app"
+            echo '```'
+            echo
+            echo "**Flashing a blank device** needs all four images -- the"
+            echo "application alone will not boot:"
+            echo
+            echo '```'
+            echo "esptool.py --chip esp32s2 write_flash \\"
+            echo "  0x1000  bootloader.bin \\"
+            echo "  0x8000  partitions.bin \\"
+            echo "  0xe000  boot_app0.bin \\"
+            echo "  0x10000 $app"
+            echo '```'
+            echo
+            echo "> The application lives at \`0x10000\`. \`0x1000\` is the"
+            echo "> bootloader -- writing the application there will not boot."
+            echo
+            echo "<details><summary>Size</summary>"
+            echo
+            echo '```'
+            grep -E '^(RAM|Flash):' size.txt || true
+            echo '```'
+            echo
+            echo "</details>"
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            dist/*
