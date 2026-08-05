@@ -4,6 +4,14 @@ All notable changes to the PRC152-N firmware are documented here. The format fol
 
 ## [Unreleased]
 
+### Fixed
+
+- 6.25 kHz-step channels were mistuned by up to 500 Hz: the A20 tuning command sent frequencies rounded to 3 decimal places; it now sends the full 5-decimal value (pending hardware verification of the module's parser). ([#41])
+- The A20 tuning command is now built with a bounds-checked `snprintf` and band-validated frequencies, removing a stack-buffer overflow reachable from unvalidated KDU frequency input. ([#4])
+
+[#41]: https://github.com/pusewicz/PRC152_PIO/issues/41
+[#4]: https://github.com/pusewicz/PRC152_PIO/issues/4
+
 ## [2.2.5507] - 2026-08-06
 
 ### Added
