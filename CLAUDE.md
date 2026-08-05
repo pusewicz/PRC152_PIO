@@ -48,3 +48,11 @@ Single-threaded Arduino super-loop; no RTOS tasks. `loop()` in `src/main.cpp` po
 ### Boot maintenance menu
 
 `enterSecondSystem()` (`bsp_device.cpp`) polls the squelch key for ~3 s at boot; holding it enters the maintenance menu (WiFi firmware update, USB update, channel settings, about).
+
+## Code review
+
+When reviewing changes or PRs, apply `.github/copilot-instructions.md` — it contains the firmware-specific review checklist (loop-path timing, the empty `DISABLE_INT` critical-section trap, buffer/protocol/version sync, power regressions) and the merge bar. Since there is no test suite, every behavioral change must state what was hardware-tested or list what still needs hardware testing.
+
+## Subagents
+
+Project agents in `.claude/agents/`: `firmware-engineer` (implementation), `firmware-reviewer` (read-only diff review), `hardware-radio-expert` (pins/rails/RF/protocol consulting), `power-perf-optimizer` (idle-power work, carries the measured power analysis and ranked backlog). Prefer delegating matching work to them.
