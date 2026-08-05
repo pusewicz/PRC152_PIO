@@ -178,13 +178,21 @@ jobs:
       - name: Stash reporting script
         run: cp .github/scripts/size_report.py "$RUNNER_TEMP/size_report.py"
 
+      # Each revision gets its own build directory. Sharing one would let
+      # PlatformIO carry objects across the checkout, so the "base" numbers
+      # could reflect a mix of both revisions -- which would quietly corrupt the
+      # only thing this job produces.
       - name: Build this PR
+        env:
+          PLATFORMIO_BUILD_DIR: ${{ runner.temp }}/pio-head
         run: pio run | tee "$RUNNER_TEMP/size-head.txt"
 
       # If the base does not build, carry on and report absolute sizes only --
       # a broken base should not hide this PR's numbers.
       - name: Build base for comparison
         continue-on-error: true
+        env:
+          PLATFORMIO_BUILD_DIR: ${{ runner.temp }}/pio-base
         run: |
           git checkout --detach ${{ github.event.pull_request.base.sha }}
           pio run | tee "$RUNNER_TEMP/size-base.txt"

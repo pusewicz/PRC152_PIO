@@ -65,6 +65,16 @@ jobs:
           mkdir -p dist
           cp .pio/build/esp32-s2-saola-1/*.bin dist/
           cp .pio/build/esp32-s2-saola-1/*.elf dist/
+          # boot_app0.bin ships with the framework rather than being built, but
+          # a from-scratch flash needs it -- include it so the release is
+          # self-contained instead of silently incomplete.
+          boot_app0=$(find ~/.platformio/packages/framework-arduinoespressif32 \
+                        -name boot_app0.bin -print -quit)
+          if [ -n "$boot_app0" ]; then
+            cp "$boot_app0" dist/
+          else
+            echo "::warning::boot_app0.bin not found; full-flash instructions will be incomplete"
+          fi
           ls -l dist
 
       - name: Create release
@@ -72,13 +82,38 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pio run --target size > size.txt || true
+          app=$(basename "$(ls dist/PRC152-N*.bin)")
           {
-            echo "Firmware build for \`$GITHUB_REF_NAME\`."
+            echo "Firmware build for \`$GITHUB_REF_NAME\` (ESP32-S2)."
             echo
-            echo "Flash with:"
+            echo "### Flashing"
+            echo
+            echo "Easiest and least error-prone -- PlatformIO knows every offset:"
+            echo
             echo '```'
-            echo "esptool.py --chip esp32s2 write_flash 0x1000 PRC152-N<version>.bin"
+            echo "pio run -t upload"
             echo '```'
+            echo
+            echo "**Updating the application only** on a radio that already has a"
+            echo "bootloader (the usual case):"
+            echo
+            echo '```'
+            echo "esptool.py --chip esp32s2 write_flash 0x10000 $app"
+            echo '```'
+            echo
+            echo "**Flashing a blank device** needs all four images -- the"
+            echo "application alone will not boot:"
+            echo
+            echo '```'
+            echo "esptool.py --chip esp32s2 write_flash \\"
+            echo "  0x1000  bootloader.bin \\"
+            echo "  0x8000  partitions.bin \\"
+            echo "  0xe000  boot_app0.bin \\"
+            echo "  0x10000 $app"
+            echo '```'
+            echo
+            echo "> The application lives at \`0x10000\`. \`0x1000\` is the"
+            echo "> bootloader -- writing the application there will not boot."
             echo
             echo "<details><summary>Size</summary>"
             echo
