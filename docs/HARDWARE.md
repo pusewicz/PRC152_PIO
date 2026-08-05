@@ -39,7 +39,7 @@ map below is reconstructed entirely from this repo's source.
 
 ## MCU: ESP32-S2-Saola-1
 
-`platformio.ini:11-13`: `board = esp32-s2-saola-1`, `platform = espressif32`,
+`platformio.ini:12-14`: `platform = espressif32`, `board = esp32-s2-saola-1`,
 `framework = arduino`.
 
 Espressif's ESP32-S2-Saola-1 is a WROVER-module dev board built around the ESP32-S2 SoC
@@ -61,9 +61,9 @@ every bus is bit-banged (see below).
 `include/userinclude.h:14-16` defines the three historical targets:
 
 ```c
-THISCHIP_STM32F103RET6 = 0
-THISCHIP_CM32M101A     = 1
-THISCHIP_ESP32S2       = 2
+#define THISCHIP_STM32F103RET6   0
+#define THISCHIP_CM32M101A       1
+#define THISCHIP_ESP32S2         2
 ```
 
 `include/FCS152_KDU.h:10` hardcodes `#define THISCHIP THISCHIP_ESP32S2` — the
@@ -139,9 +139,11 @@ Two UARTs, both ASCII/framed-text protocols, no hardware handshaking:
 
 - **UART1 — KDU link / firmware upgrade** (`bsp_uart.h:9`, comment: "串口1 KDU/固件升级"):
   the Arduino default `Serial`, 115200 baud (`bsp_uart.cpp:12,71`). Carries the single
-  framed ASCII buffer exchanging all radio parameters with the detachable KDU (see
-  CLAUDE.md's Architecture section for the `Length_*`/`*_RANK` field-offset scheme).
-  Buffer size `USART1_BUF_SIZE` = 1024+8+1+50 bytes (`FCS152_KDU.h:127`).
+  framed ASCII buffer exchanging all radio parameters with the detachable KDU: each field's
+  byte offset is computed by a `Length_*`/`*_RANK` constant chain (e.g. `Length_CHAN`,
+  `Length_RX`, ... at `FCS152_KDU.h:303-324`, summed into `CHAN_RANK`, `RX_RANK`, ... at
+  `FCS152_KDU.h:350-360`). Buffer size `USART1_BUF_SIZE` = 1024+8+1+50 bytes
+  (`FCS152_KDU.h:127`).
 - **UART2 — A20 RF module** (`bsp_uart.h:15`, "串口2 A20模块"): `Serial1`, TX=GPIO17,
   RX=GPIO18, 9600 baud (`bsp_uart.cpp:48`, called from `bsp_A002_Init()` at
   `bsp_conio.cpp:12`). Buffer size `USART2_BUF_SIZE` = 255 bytes.
@@ -152,8 +154,10 @@ The A20 module speaks an AT-command protocol, e.g. `AT+DMOSETGROUP=1,436.025,436
 common DRA818/SA818-class narrowband FM transceiver modules used widely in hobbyist radio
 projects — this repo's "A20" is very likely one of that module family, or a compatible
 clone, though no explicit part-number string appears in source. `A002_CALLBACK()`
-(`bsp_uart.cpp:209`) parses its `+DMOCONNECT:`/`+DMOSETGROUP:`-style responses; per
-CLAUDE.md, this callback must run for the module's responses to be consumed.
+(`bsp_uart.cpp:209`) parses its `+DMOCONNECT:`/`+DMOSETGROUP:`-style responses; its own
+header comment states it "must be processed for A20 data to be returned"
+(`include/bsp_uart.h:32`), and callers poll it explicitly rather than relying on an
+interrupt (`src/controller.cpp:69,75`, `src/main_fun.cpp:696,3180`).
 
 ## Bit-banged I2C bus & CH423 GPIO expander
 
@@ -181,10 +185,11 @@ bit-banged bus, `rda5807.cpp:9,31-39`).
 
 ## M62364 — audio-level control DAC (not on the I2C bus)
 
-CLAUDE.md's architecture summary groups the M62364 with the "I2C, CH423" peripherals, but
-the code shows it's actually on its **own dedicated 3-wire bit-banged bus** — LD=GPIO13,
-CLK=GPIO12, DATA=GPIO11 (`bsp_m62364.h:24-32`), driven by `M62364_sendData()`
-(`bsp_m62364.cpp:38-59`, 12-bit shift-out: 8 data bits + 4-bit channel address).
+Despite sharing a shelf with the CH423 and RDA5807 in casual descriptions of this
+firmware's peripherals, the M62364 is wired to its **own dedicated 3-wire bit-banged
+bus**, separate from the I2C bus above — LD=GPIO13, CLK=GPIO12, DATA=GPIO11
+(`bsp_m62364.h:24-32`), driven by `M62364_sendData()` (`bsp_m62364.cpp:38-59`, 12-bit
+shift-out: 8 data bits + 4-bit channel address).
 
 The M62364 is an 8-bit, 8-channel multiplying D/A converter with buffered outputs —
 originally a Mitsubishi Electric part, now second-sourced by Unisonic Technologies (UTC)
@@ -254,8 +259,8 @@ that RCU feature.
 
 ## Power-up sequencing (`src/main.cpp` `setup()`)
 
-Order matters here (per CLAUDE.md) — noise suppression and power-rail gating happen before
-any RF/audio hardware is touched:
+Order matters here — noise suppression (step 3) and power-rail gating (steps 5, 12) happen
+before any RF/audio hardware is enabled (step 13 onward):
 
 1. `UART1_Init()` — KDU/debug `Serial` at 115200 baud.
 2. `CH423_Init()` — bit-bang I2C bring-up, expander outputs reset to a known (rails-off) state.
