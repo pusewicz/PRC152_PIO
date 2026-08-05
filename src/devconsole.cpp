@@ -195,6 +195,16 @@ int DevConsole_Execute(const char *line, char *out, int outsz)
             get_Flag(FLAG_CF_SWITCH_ADDR), get_Flag(FLAG_VU_SWITCH_ADDR),
             KDU_INSERT, Home_Mode, WFM, STEP, SQL, VOLUME);
 
+    if (!strcmp(line, "dump screen"))
+    {
+        int n = snprintf(out, outsz, "{\"ok\":1,\"pages\":8,\"cols\":128,\"hex\":\"");
+        for (int p = 0; p < 8; p++)
+            for (int c = 0; c < 128; c++)
+                n = dc_appended(n, snprintf(out + n, outsz - n, "%02x", lcd_shadow[p][c]), outsz);
+        n = dc_appended(n, snprintf(out + n, outsz - n, "\"}"), outsz);
+        return n;
+    }
+
     if (!strncmp(line, "set ", 4))
     {
         char name[16] = {0}, val[16] = {0};

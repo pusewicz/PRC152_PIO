@@ -2,6 +2,11 @@
 #define __MYLCD_H__
 #include "FCS152_KDU.h"
 #include "font.h"
+
+#ifdef DEVCONSOLE
+extern volatile unsigned char lcd_shadow[8][128];
+#endif
+
 //清除区域定义
 typedef enum
 {

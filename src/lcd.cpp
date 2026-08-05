@@ -2,6 +2,15 @@
 #include "bsp_lcd.h" //驱动引脚初始化
 #include "bsp_delay.h"
 
+#ifdef DEVCONSOLE
+// Shadow of the LCD controller GRAM for `dump screen`: mirrors the
+// address-counter state machine (page 0xB0+p, column 0x10|hi / 0x0F&lo,
+// auto-increment on data). 0x81 (contrast) takes a parameter byte that
+// must not be misread as a column command.
+volatile unsigned char lcd_shadow[8][128];
+static unsigned char shadow_page = 0, shadow_col = 0, shadow_skip_param = 0;
+#endif
+
 #define INVERTED_OFFSET 4
 u8 LCD_INVERTED = OFF; // 液晶颠倒显示
 
@@ -100,6 +109,23 @@ void LCD_DeInit(void)
 void LCD_Write(unsigned char dat, unsigned char rs) // rs == 1 data rs==0  cmd
 {
     uint8_t i;
+#ifdef DEVCONSOLE
+    if (rs)
+    {
+        lcd_shadow[shadow_page & 7][shadow_col & 127] = dat;
+        shadow_col = (shadow_col + 1) & 127;
+    }
+    else if (shadow_skip_param)
+        shadow_skip_param = 0;
+    else if ((dat & 0xF0) == 0xB0)
+        shadow_page = dat & 0x0F;
+    else if ((dat & 0xF0) == 0x10)
+        shadow_col = (shadow_col & 0x0F) | ((dat & 0x0F) << 4);
+    else if (dat < 0x10)
+        shadow_col = (shadow_col & 0xF0) | dat;
+    else if (dat == 0x81)
+        shadow_skip_param = 1;
+#endif
     LCD_SCL_CLR;
     LCD_CS_CLR;
     if (rs)
