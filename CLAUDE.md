@@ -8,6 +8,8 @@ Firmware for the "FCS PRC152-N", a replica of the Harris PRC-152 radio, targetin
 
 ## Commands
 
+Requires the PlatformIO Core CLI (`pio`); on macOS install via `brew install platformio`.
+
 - Build: `pio run`
 - Flash: `pio run -t upload --upload-port <port>` — `platformio.ini` hardcodes `COM17` (Windows); override on macOS (e.g. `/dev/cu.usbserial-*`)
 - Serial monitor: `pio device monitor` (115200 baud)
