@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Spec: `docs/superpowers/specs/2026-08-05-testing-strategy-design.md`.
-- The ship env `esp32-s2-saola-1` must keep today's behavior. All devconsole code is `#ifdef DEVCONSOLE` (or lives in files whose content is entirely inside that guard). Tasks 2, 4, 5, 6 must leave the ship `firmware.bin` byte-identical (verified against a baseline hash). Tasks 3 and 8 restructure shared code and may change the binary layout; they must be semantically inert, verified by build + review.
+- The ship env `esp32-s2-saola-1` must keep today's behavior. All devconsole code is `#ifdef DEVCONSOLE` (or lives in files whose content is entirely inside that guard). Tasks 2, 4, 5, 6 must leave the ship firmware's **code, symbols, and loadable sections identical** — verified by diffing `xtensa-esp32s2-elf-objdump -d` and `-nm` output against the reference in `.superpowers/sdd/2026-08-05-testing-strategy/ship-reference/` (the toolchain lives in `~/.platformio/packages/toolchain-xtensa-esp32s2/bin`). A raw `.bin` hash comparison does NOT work: esptool embeds a whole-ELF SHA-256 in the image, which shifts with debug-info line numbers even for provably no-op changes (root-caused in Task 2). Tasks 3 and 8 restructure shared code and may change the binary layout; they must be semantically inert, verified by build + review.
 - There is no test suite on hardware paths: every task lists what it verified by build/native-test and what remains for hardware testing. Collect these in the final task.
 - Single-threaded super-loop: no blocking calls, no unbounded loops in any poll path. `DevConsole_Poll()` does bounded work: at most one command executed per call.
 - Comments in new code: English. Match existing style (banner-free, brief).
@@ -592,7 +592,9 @@ Safety: refuse to inject `key_long` on the encoder? `key_long` triggers `SHUT()`
 
 ```bash
 pio run -e esp32-s2-saola-1-dev && pio run
-shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # equals baseline
+TC=~/.platformio/packages/toolchain-xtensa-esp32s2/bin
+"$TC/xtensa-esp32s2-elf-objdump" -d .pio/build/esp32-s2-saola-1/PRC152-N*.elf | diff -q - .superpowers/sdd/2026-08-05-testing-strategy/ship-reference/ship.dis   # no output = identical
+"$TC/xtensa-esp32s2-elf-nm" .pio/build/esp32-s2-saola-1/PRC152-N*.elf | sort | diff -q - .superpowers/sdd/2026-08-05-testing-strategy/ship-reference/ship.nm    # no output = identical
 ```
 
 - [ ] **Step 4: Commit**
@@ -684,7 +686,9 @@ extern volatile unsigned char lcd_shadow[8][128];
 
 ```bash
 pio run -e esp32-s2-saola-1-dev && pio run
-shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # equals baseline
+TC=~/.platformio/packages/toolchain-xtensa-esp32s2/bin
+"$TC/xtensa-esp32s2-elf-objdump" -d .pio/build/esp32-s2-saola-1/PRC152-N*.elf | diff -q - .superpowers/sdd/2026-08-05-testing-strategy/ship-reference/ship.dis   # no output = identical
+"$TC/xtensa-esp32s2-elf-nm" .pio/build/esp32-s2-saola-1/PRC152-N*.elf | sort | diff -q - .superpowers/sdd/2026-08-05-testing-strategy/ship-reference/ship.nm    # no output = identical
 git add src/lcd.cpp include/lcd.h src/devconsole.cpp
 git commit -m "Add LCD shadow buffer and dump screen command"
 ```
@@ -758,7 +762,9 @@ When the user enters the WiFi PGM/RCU menu on a dev build, `handleWIFIServer` (`
 
 ```bash
 pio run -e esp32-s2-saola-1-dev && pio run
-shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # equals baseline
+TC=~/.platformio/packages/toolchain-xtensa-esp32s2/bin
+"$TC/xtensa-esp32s2-elf-objdump" -d .pio/build/esp32-s2-saola-1/PRC152-N*.elf | diff -q - .superpowers/sdd/2026-08-05-testing-strategy/ship-reference/ship.dis   # no output = identical
+"$TC/xtensa-esp32s2-elf-nm" .pio/build/esp32-s2-saola-1/PRC152-N*.elf | sort | diff -q - .superpowers/sdd/2026-08-05-testing-strategy/ship-reference/ship.nm    # no output = identical
 git add src/bsp_wifi.cpp include/bsp_wifi.h src/devconsole.cpp
 git commit -m "Serve devconsole over WiFi /dev endpoint in dev builds"
 ```
