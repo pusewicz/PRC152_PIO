@@ -117,15 +117,31 @@ jobs:
 
       # Non-blocking on purpose: the known-defect backlog would otherwise fail
       # every run. Read the report, do not gate on it -- yet.
+      #
+      # --skip-packages skips the framework/toolchain but NOT lib_deps, so
+      # cppcheck also analyses ArduinoJson and its ~128 findings drown out the
+      # ~19 from this project. Keep the full log, but lead with our own code.
       - name: Run pio check
         continue-on-error: true
-        run: pio check --skip-packages --severity=high --severity=medium | tee check-report.txt
+        run: |
+          pio check --skip-packages --severity=high --severity=medium \
+            | tee check-raw.txt
+          {
+            echo "=== src/ and include/ ==="
+            grep -E '^(src|include)/' check-raw.txt || echo "(no findings)"
+            echo
+            echo "=== third-party (lib_deps), for reference ==="
+            grep -cE '^\.pio/libdeps' check-raw.txt | sed 's/$/ findings suppressed/'
+          } > check-report.txt
+          cat check-report.txt
 
       - name: Upload analysis report
         uses: actions/upload-artifact@v4
         with:
           name: static-analysis
-          path: check-report.txt
+          path: |
+            check-report.txt
+            check-raw.txt
 
   size-report:
     name: Size report
