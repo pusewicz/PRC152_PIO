@@ -81,7 +81,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pio run --target size > size.txt || true
+          # Plain `pio run`, not `--target size` -- that target runs a
+          # different SCons step (raw text/data/bss table) and never prints
+          # the RAM:/Flash: percentage lines grepped below.
+          pio run > size.txt || true
           app=$(basename "$(ls dist/PRC152-N*.bin)")
           {
             echo "Firmware build for \`$GITHUB_REF_NAME\` (ESP32-S2)."
