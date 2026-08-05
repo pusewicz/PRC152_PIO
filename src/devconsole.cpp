@@ -41,6 +41,60 @@ static int dc_serialize_registry(char *dst, int dstsz, const char *cmd)
     return (int)serializeJson(doc, dst, dstsz);
 }
 
+// JSON-escape a string into dst (quotes, backslashes, control chars).
+// Truncates safely (never overflows dst) rather than emitting a partial
+// escape sequence. Needed for any field built with raw %s instead of
+// ArduinoJson (which escapes automatically): nicknames come from the WiFi
+// PGM page unfiltered (maxlength 7, no character filtering), so a nickname
+// containing '"' or '\' would otherwise emit invalid JSON.
+static const char *dc_json_escape(const char *src, char *dst, int dstsz)
+{
+    static const char hex[] = "0123456789abcdef";
+    int n = 0;
+    if (dstsz <= 0)
+        return dst;
+    for (; *src; src++)
+    {
+        unsigned char c = (unsigned char)*src;
+        int need = (c == '"' || c == '\\') ? 2 : (c < 0x20 ? 6 : 1);
+        if (n + need > dstsz - 1)
+            break; // stop before overflowing; leaves room for the '\0'
+        if (c == '"' || c == '\\')
+        {
+            dst[n++] = '\\';
+            dst[n++] = (char)c;
+        }
+        else if (c < 0x20)
+        {
+            dst[n++] = '\\';
+            dst[n++] = 'u';
+            dst[n++] = '0';
+            dst[n++] = '0';
+            dst[n++] = hex[(c >> 4) & 0xF];
+            dst[n++] = hex[c & 0xF];
+        }
+        else
+        {
+            dst[n++] = (char)c;
+        }
+    }
+    dst[n] = '\0';
+    return dst;
+}
+
+// Accumulates a snprintf-style write, clamping so `n` never exceeds `outsz` —
+// keeps a following `outsz - n` non-negative for every step in a chain (a
+// negative int passed as serializeJson/snprintf's size_t size parameter would
+// wrap to a huge value and defeat the bound). Ignores a negative `written`
+// (snprintf encoding error) rather than corrupting the running position.
+static inline int dc_appended(int n, int written, int outsz)
+{
+    if (written < 0)
+        return n;
+    n += written;
+    return n > outsz ? outsz : n;
+}
+
 // name -> FCS command (odd recv_mess values) whose apply-path exists in
 // readWriteValueToKDU. Incoming cmd string for value C is prefix_buf[C];
 // dispatch is readWriteValueToKDU(C) — same convention as PRC152receiveProcess.
@@ -77,31 +131,37 @@ int DevConsole_Execute(const char *line, char *out, int outsz)
         const char *name = line + 4;
         for (int i = 0; i < ITEMSUM; i++)
             if (!strcmp(parameterValue[i].item, name))
+            {
+                char esc[64];
+                dc_json_escape(parameterValue[i].valStr, esc, sizeof(esc));
                 return snprintf(out, outsz, "{\"ok\":1,\"name\":\"%s\",\"val\":\"%s\"}",
-                                name, parameterValue[i].valStr);
+                                name, esc);
+            }
         return snprintf(out, outsz, "{\"ok\":0,\"err\":\"name\"}");
     }
     if (!strcmp(line, "dump params"))
     {
         dc_refresh_registry();
-        int n = snprintf(out, outsz, "{\"ok\":1,\"params\":");
-        n += dc_serialize_registry(out + n, outsz - n, NULL);
-        n += snprintf(out + n, outsz - n, "}");
+        int n = dc_appended(0, snprintf(out, outsz, "{\"ok\":1,\"params\":"), outsz);
+        n = dc_appended(n, dc_serialize_registry(out + n, outsz - n, NULL), outsz);
+        n = dc_appended(n, snprintf(out + n, outsz - n, "}"), outsz);
         return n;
     }
     if (!strcmp(line, "dump chan"))
     {
-        int n = snprintf(out, outsz, "{\"ok\":1,\"chan\":[");
+        int n = dc_appended(0, snprintf(out, outsz, "{\"ok\":1,\"chan\":["), outsz);
         for (int s = 0; s < ARV_MEM_COUNT; s++)
         {
             CHAN_ARV_P b = &chan_arv[s];
-            n += snprintf(out + n, outsz - n,
+            char nn_esc[64];
+            dc_json_escape((const char *)b->NN, nn_esc, sizeof(nn_esc));
+            n = dc_appended(n, snprintf(out + n, outsz - n,
                 "%s{\"slot\":%d,\"chan\":%d,\"rx\":\"%3.5f\",\"tx\":\"%3.5f\","
                 "\"rs\":%d,\"ts\":%d,\"pw\":%d,\"bw\":%d,\"nn\":\"%s\",\"scan\":%d}",
                 s ? "," : "", s, b->CHAN, b->RX_FREQ, b->TX_FREQ,
-                b->RS, b->TS, b->POWER, b->GBW, (const char *)b->NN, b->SCAN);
+                b->RS, b->TS, b->POWER, b->GBW, nn_esc, b->SCAN), outsz);
         }
-        n += snprintf(out + n, outsz - n, "]}");
+        n = dc_appended(n, snprintf(out + n, outsz - n, "]}"), outsz);
         return n;
     }
     if (!strcmp(line, "dump flags"))
