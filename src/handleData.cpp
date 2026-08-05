@@ -337,6 +337,10 @@ int PRC152receiveProcess()
             return BACK2MAIN;
         }
     }
+#ifdef DEVCONSOLE
+    if (Serial.available() && Serial.peek() == '>')
+        return NO_OPERATE; // console traffic; DevConsole_Poll will consume it
+#endif
     if (UART1_getRcvFlag())
     {
         UART1_dataPreProcess();
