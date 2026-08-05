@@ -979,7 +979,11 @@ def test_screen_not_blank(dc):
 
 
 def test_screen_render_smoke(dc):
-    print(render_screen(dc.screen()))  # visual aid: pytest -s shows the display
+    art = render_screen(dc.screen())
+    lines = art.splitlines()
+    assert len(lines) == 64
+    assert all(len(l) == 128 for l in lines)
+    print(art)  # visual aid: pytest -s shows the display
 ```
 
 - [ ] **Step 4: Write `requirements.txt` and `README.md`**
