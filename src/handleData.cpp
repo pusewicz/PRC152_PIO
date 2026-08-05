@@ -1,5 +1,6 @@
 #include "main.h"
 #include "bsp_json.h"
+#include "devconsole.h"
 
 extern u8 RSSI, SC,                         // SCERRN CONTRAST  CHAN = 0,
     STEP, SQL, AUD, MIC, ENC, TOT, BL, VDO, // VDO:输出电源
@@ -338,7 +339,7 @@ int PRC152receiveProcess()
         }
     }
 #ifdef DEVCONSOLE
-    if (Serial.available() && Serial.peek() == '>')
+    if ((Serial.available() && Serial.peek() == '>') || DevConsole_LineInProgress())
         return NO_OPERATE; // console traffic; DevConsole_Poll will consume it
 #endif
     if (UART1_getRcvFlag())

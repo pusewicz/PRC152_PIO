@@ -14,6 +14,7 @@ void DevConsole_Poll(void);
 int  DevConsole_Execute(const char *line, char *out, int outsz);
 unsigned char DevConsole_TakeInjectedKey(void);
 unsigned char DevConsole_TakeInjectedEnc(void);
+int  DevConsole_LineInProgress(void);
 
 #else
 
@@ -22,6 +23,7 @@ static inline void DevConsole_WifiInit(void) {}
 static inline void DevConsole_Poll(void) {}
 static inline unsigned char DevConsole_TakeInjectedKey(void) { return 17; } /* MATRIX_RESULT_ERROR */
 static inline unsigned char DevConsole_TakeInjectedEnc(void) { return 0; }  /* key_idle */
+static inline int DevConsole_LineInProgress(void) { return 0; }
 
 #endif
 #endif

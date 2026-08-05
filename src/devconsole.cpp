@@ -9,6 +9,7 @@
 static char dc_line[DC_LINE_SIZE];
 static int  dc_line_len = 0;
 static u8   dc_in_line = 0;       // saw '>' and consuming until '\n'
+static uint32_t dc_line_last_ms = 0; // last time a byte was consumed while in-line
 static char dc_out[DC_OUT_SIZE];
 
 void DevConsole_Init(void)
@@ -21,6 +22,10 @@ void DevConsole_WifiInit(void) {} // Task 6
 
 unsigned char DevConsole_TakeInjectedKey(void) { return MATRIX_RESULT_ERROR; } // Task 4
 unsigned char DevConsole_TakeInjectedEnc(void) { return key_idle; }            // Task 4
+
+// True while a '>'-prefixed line is mid-flight (arbitration hint for
+// PRC152receiveProcess: don't let the KDU reader drain our continuation bytes).
+int DevConsole_LineInProgress(void) { return dc_in_line; }
 
 int DevConsole_Execute(const char *line, char *out, int outsz)
 {
@@ -39,6 +44,14 @@ void DevConsole_Poll(void)
         return;
     last_ms = now;
 
+    // A dead/slow client can leave us stuck mid-line, which would keep
+    // DevConsole_LineInProgress() true forever and wedge the KDU reader.
+    if (dc_in_line && (now - dc_line_last_ms > 500))
+    {
+        dc_in_line = 0;
+        dc_line_len = 0;
+    }
+
     while (Serial.available())
     {
         if (!dc_in_line)
@@ -48,9 +61,11 @@ void DevConsole_Poll(void)
             Serial.read(); // consume '>'
             dc_in_line = 1;
             dc_line_len = 0;
+            dc_line_last_ms = now;
             continue;
         }
         char c = (char)Serial.read();
+        dc_line_last_ms = now;
         if (c == '\n' || c == '\r')
         {
             dc_line[dc_line_len] = '\0';
