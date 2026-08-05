@@ -14,17 +14,6 @@ static u8   dc_in_line = 0;       // saw '>' and consuming until '\n'
 static uint32_t dc_line_last_ms = 0; // last time a byte was consumed while in-line
 static char dc_out[DC_OUT_SIZE];
 
-#define DC_INJ_DEPTH 16
-static u8 dc_key_q[DC_INJ_DEPTH]; static int dc_key_head = 0, dc_key_tail = 0;
-static u8 dc_enc_q[DC_INJ_DEPTH]; static int dc_enc_head = 0, dc_enc_tail = 0;
-
-static int dc_q_push(u8 *q, int *tail, int head, u8 v)
-{
-    int next = (*tail + 1) % DC_INJ_DEPTH;
-    if (next == head) return 0;
-    q[*tail] = v; *tail = next; return 1;
-}
-
 // Mirrors the local externs at src/handleData.cpp:4-14 (same globals, defined
 // in src/main_fun.cpp) — not declared in any header. WFM is excluded: main.h
 // already externs it (guarded by #if FM_EN, which is 1 in this build).
@@ -124,21 +113,8 @@ void DevConsole_Init(void)
 
 void DevConsole_WifiInit(void) {} // Task 6
 
-unsigned char DevConsole_TakeInjectedKey(void)
-{
-    if (dc_key_head == dc_key_tail) return MATRIX_RESULT_ERROR;
-    u8 v = dc_key_q[dc_key_head];
-    dc_key_head = (dc_key_head + 1) % DC_INJ_DEPTH;
-    return v;
-}
-
-unsigned char DevConsole_TakeInjectedEnc(void)
-{
-    if (dc_enc_head == dc_enc_tail) return key_idle;
-    u8 v = dc_enc_q[dc_enc_head];
-    dc_enc_head = (dc_enc_head + 1) % DC_INJ_DEPTH;
-    return v;
-}
+unsigned char DevConsole_TakeInjectedKey(void) { return MATRIX_RESULT_ERROR; } // Task 4
+unsigned char DevConsole_TakeInjectedEnc(void) { return key_idle; }            // Task 4
 
 // True while a '>'-prefixed line is mid-flight (arbitration hint for
 // PRC152receiveProcess: don't let the KDU reader drain our continuation bytes).
@@ -225,29 +201,6 @@ int DevConsole_Execute(const char *line, char *out, int outsz)
                 return snprintf(out, outsz, "{\"ok\":1,\"cmd\":%d}", i);
             }
         return snprintf(out, outsz, "{\"ok\":0,\"err\":\"cmd\"}");
-    }
-    if (!strncmp(line, "key ", 4))
-    {
-        int code = atoi(line + 4);
-        if (code < 0 || code > 15)
-            return snprintf(out, outsz, "{\"ok\":0,\"err\":\"code\"}");
-        if (!dc_q_push(dc_key_q, &dc_key_tail, dc_key_head, (u8)code))
-            return snprintf(out, outsz, "{\"ok\":0,\"err\":\"full\"}");
-        return snprintf(out, outsz, "{\"ok\":1}");
-    }
-    if (!strncmp(line, "enc ", 4))
-    {
-        const char *ev = line + 4;
-        if (!strcmp(ev, "cw"))  { TIMES += 1; return snprintf(out, outsz, "{\"ok\":1}"); }
-        if (!strcmp(ev, "ccw")) { TIMES -= 1; return snprintf(out, outsz, "{\"ok\":1}"); }
-        u8 code = !strcmp(ev, "click") ? key_click :
-                  !strcmp(ev, "double") ? key_double :
-                  !strcmp(ev, "long") ? key_long : key_idle;
-        if (code == key_idle)
-            return snprintf(out, outsz, "{\"ok\":0,\"err\":\"event\"}");
-        if (!dc_q_push(dc_enc_q, &dc_enc_tail, dc_enc_head, code))
-            return snprintf(out, outsz, "{\"ok\":0,\"err\":\"full\"}");
-        return snprintf(out, outsz, "{\"ok\":1}");
     }
 
     return snprintf(out, outsz, "{\"ok\":0,\"err\":\"unknown\"}");
