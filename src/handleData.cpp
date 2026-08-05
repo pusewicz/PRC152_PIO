@@ -14,9 +14,12 @@ extern u8 FM_CHAN;
 
 extern ParameterValue_t parameterValue[ITEMSUM];
 
-/// @brief 	将需要发送的数据赋值给存储对应变量的数组 parameterValue
+/// @brief 	sprintf-only refresh of parameterValue (no blocking hardware I/O):
+/// 		everything writeOtherValue2buf() does except the RSSI hardware
+/// 		refresh and the Jvoltage ADC read. Callable from the console
+/// 		without triggering an A20 UART round-trip or a battery ADC read.
 /// @param 	null
-void writeOtherValue2buf()
+void writeOtherValue2buf_core()
 {
     sprintf(parameterValue[Jcf      ].valStr, "%d", get_Flag(FLAG_CF_SWITCH_ADDR));
     sprintf(parameterValue[Juv      ].valStr, "%d", get_Flag(FLAG_VU_SWITCH_ADDR));
@@ -34,7 +37,19 @@ void writeOtherValue2buf()
     sprintf(parameterValue[Jwfm     ].valStr, "%d", WFM);
     sprintf(parameterValue[JfmFreq  ].valStr, "%03d", FM_FREQ);
     sprintf(parameterValue[Jhomemode].valStr, "%d", Home_Mode);
+    sprintf(parameterValue[Jrssi    ].valStr, "%03d", RSSI);
+    sprintf(parameterValue[JfmChan  ].valStr, "%d", FM_CHAN);
+    sprintf(parameterValue[JrcvSQ   ].valStr, "%03d", A002_SQ_READ);
+    sprintf(parameterValue[JpressPTT].valStr, "%d", PTT_READ);
+    sprintf(parameterValue[JpressSQU].valStr, "%d", SQUELCH_READ);
+    sprintf(parameterValue[JrcvChan ].valStr, "%03d", rcv_chan);
+    sprintf(parameterValue[JselPos  ].valStr, "%03d", sele_pos);
+}
 
+/// @brief 	将需要发送的数据赋值给存储对应变量的数组 parameterValue
+/// @param 	null
+void writeOtherValue2buf()
+{
     if (PTT_READ == 0)
         RSSI = 100;
     else
@@ -44,14 +59,8 @@ void writeOtherValue2buf()
         else
             RSSI = Get_A20_RSSI();
     }
-    sprintf(parameterValue[Jrssi    ].valStr, "%03d", RSSI);
-    sprintf(parameterValue[JfmChan  ].valStr, "%d", FM_CHAN);
+    writeOtherValue2buf_core();
     sprintf(parameterValue[Jvoltage ].valStr, "%d", Get_Battery_Vol());
-    sprintf(parameterValue[JrcvSQ   ].valStr, "%03d", A002_SQ_READ);
-    sprintf(parameterValue[JpressPTT].valStr, "%d", PTT_READ);
-    sprintf(parameterValue[JpressSQU].valStr, "%d", SQUELCH_READ);
-    sprintf(parameterValue[JrcvChan ].valStr, "%03d", rcv_chan);
-    sprintf(parameterValue[JselPos  ].valStr, "%03d", sele_pos);
 }
 
 /// @brief 	从数组内读取数据赋值给信道

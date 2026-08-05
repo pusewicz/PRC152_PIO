@@ -43,6 +43,8 @@ void SQUELCH_Contol(void);
 
 int readWriteValueToKDU(int Cmd);
 int PRC152receiveProcess(void);
+void writeOtherValue2buf_core(void); // hardware-free sprintf refresh (devconsole)
+void writeChanToArray(CHAN_ARV_P B);  // needed by devconsole's registry refresh
 int KDUCheck(void);            //
 int KDU_Processor(void);       // KDU数据交互
 

@@ -2,6 +2,8 @@
 #ifdef DEVCONSOLE
 
 #include "main.h"
+#include "bsp_json.h"
+#include <ArduinoJson.h>
 
 #define DC_LINE_SIZE 1024
 #define DC_OUT_SIZE  4096
@@ -11,6 +13,43 @@ static int  dc_line_len = 0;
 static u8   dc_in_line = 0;       // saw '>' and consuming until '\n'
 static uint32_t dc_line_last_ms = 0; // last time a byte was consumed while in-line
 static char dc_out[DC_OUT_SIZE];
+
+// Mirrors the local externs at src/handleData.cpp:4-14 (same globals, defined
+// in src/main_fun.cpp) — not declared in any header. WFM is excluded: main.h
+// already externs it (guarded by #if FM_EN, which is 1 in this build).
+extern u8 STEP, SQL, VOLUME;
+extern volatile char Home_Mode;
+extern volatile u8 KDU_INSERT;
+
+extern ParameterValue_t parameterValue[ITEMSUM];
+// rx1_buf is already declared (with its real bound) by bsp_uart.h, pulled in
+// via main.h -> bsp_uart.h; no separate extern needed here. Cast to (char*)
+// at each use site, same convention as src/handleData.cpp.
+
+static void dc_refresh_registry(void)
+{
+    writeOtherValue2buf_core();
+    writeChanToArray(&chan_arv[NOW]);
+}
+
+static int dc_serialize_registry(char *dst, int dstsz, const char *cmd)
+{
+    DynamicJsonDocument doc(2048);
+    for (int i = 0; i < ITEMSUM; i++)
+        doc[parameterValue[i].item] = parameterValue[i].valStr;
+    if (cmd) doc["cmd"] = cmd;
+    return (int)serializeJson(doc, dst, dstsz);
+}
+
+// name -> FCS command (odd recv_mess values) whose apply-path exists in
+// readWriteValueToKDU. Incoming cmd string for value C is prefix_buf[C];
+// dispatch is readWriteValueToKDU(C) — same convention as PRC152receiveProcess.
+static const struct { const char *name; int cmd; } dc_set_map[] = {
+    {"step", _SETSTEP}, {"sql", _SETSQL}, {"audio", _SETAUD}, {"mic", _SETAUD},
+    {"tot", _SETTOT}, {"outPower", _SETVDO}, {"volume", _SETVOLU},
+    {"preTone", _SETTONE}, {"endTone", _SETTONE}, {"wfm", _SETFM},
+    {"fmFreq", _SETFM}, {"homemode", _SETHOMEMODE}, {"selChan", _SETDUALPOS},
+};
 
 void DevConsole_Init(void)
 {
@@ -29,8 +68,81 @@ int DevConsole_LineInProgress(void) { return dc_in_line; }
 
 int DevConsole_Execute(const char *line, char *out, int outsz)
 {
-    if (!strncmp(line, "ping", 4))
+    if (!strcmp(line, "ping"))
         return snprintf(out, outsz, "{\"ok\":1,\"fw\":\"%s\",\"dc\":1}", VERSION_152);
+
+    if (!strncmp(line, "get ", 4))
+    {
+        dc_refresh_registry();
+        const char *name = line + 4;
+        for (int i = 0; i < ITEMSUM; i++)
+            if (!strcmp(parameterValue[i].item, name))
+                return snprintf(out, outsz, "{\"ok\":1,\"name\":\"%s\",\"val\":\"%s\"}",
+                                name, parameterValue[i].valStr);
+        return snprintf(out, outsz, "{\"ok\":0,\"err\":\"name\"}");
+    }
+    if (!strcmp(line, "dump params"))
+    {
+        dc_refresh_registry();
+        int n = snprintf(out, outsz, "{\"ok\":1,\"params\":");
+        n += dc_serialize_registry(out + n, outsz - n, NULL);
+        n += snprintf(out + n, outsz - n, "}");
+        return n;
+    }
+    if (!strcmp(line, "dump chan"))
+    {
+        int n = snprintf(out, outsz, "{\"ok\":1,\"chan\":[");
+        for (int s = 0; s < ARV_MEM_COUNT; s++)
+        {
+            CHAN_ARV_P b = &chan_arv[s];
+            n += snprintf(out + n, outsz - n,
+                "%s{\"slot\":%d,\"chan\":%d,\"rx\":\"%3.5f\",\"tx\":\"%3.5f\","
+                "\"rs\":%d,\"ts\":%d,\"pw\":%d,\"bw\":%d,\"nn\":\"%s\",\"scan\":%d}",
+                s ? "," : "", s, b->CHAN, b->RX_FREQ, b->TX_FREQ,
+                b->RS, b->TS, b->POWER, b->GBW, (const char *)b->NN, b->SCAN);
+        }
+        n += snprintf(out + n, outsz - n, "]}");
+        return n;
+    }
+    if (!strcmp(line, "dump flags"))
+        return snprintf(out, outsz,
+            "{\"ok\":1,\"cf\":%d,\"vu\":%d,\"kdu\":%d,\"home\":%d,\"wfm\":%d,"
+            "\"step\":%d,\"sql\":%d,\"vol\":%d}",
+            get_Flag(FLAG_CF_SWITCH_ADDR), get_Flag(FLAG_VU_SWITCH_ADDR),
+            KDU_INSERT, Home_Mode, WFM, STEP, SQL, VOLUME);
+
+    if (!strncmp(line, "set ", 4))
+    {
+        char name[16] = {0}, val[16] = {0};
+        if (sscanf(line + 4, "%15s %15s", name, val) != 2)
+            return snprintf(out, outsz, "{\"ok\":0,\"err\":\"args\"}");
+        for (unsigned i = 0; i < ARR_SIZE(dc_set_map); i++)
+            if (!strcmp(dc_set_map[i].name, name))
+            {
+                dc_refresh_registry();
+                for (int j = 0; j < ITEMSUM; j++)
+                    if (!strcmp(parameterValue[j].item, name))
+                        snprintf(parameterValue[j].valStr, 16, "%s", val);
+                // route through the real KDU apply path for true side effects
+                dc_serialize_registry((char *)rx1_buf, USART1_BUF_SIZE,
+                                      prefix_buf[dc_set_map[i].cmd]);
+                readWriteValueToKDU(dc_set_map[i].cmd);
+                return snprintf(out, outsz, "{\"ok\":1}");
+            }
+        return snprintf(out, outsz, "{\"ok\":0,\"err\":\"unsupported\"}");
+    }
+    if (!strncmp(line, "kdu ", 4))
+    {
+        snprintf((char *)rx1_buf, USART1_BUF_SIZE, "%s", line + 4);
+        for (int i = _ASKALL; i < _SETDUALPOS + 1; i += 2)
+            if (strstr((char *)rx1_buf, prefix_buf[i]))
+            {
+                readWriteValueToKDU(i);
+                return snprintf(out, outsz, "{\"ok\":1,\"cmd\":%d}", i);
+            }
+        return snprintf(out, outsz, "{\"ok\":0,\"err\":\"cmd\"}");
+    }
+
     return snprintf(out, outsz, "{\"ok\":0,\"err\":\"unknown\"}");
 }
 
@@ -73,7 +185,13 @@ void DevConsole_Poll(void)
             if (dc_line_len)
             {
                 DevConsole_Execute(dc_line, dc_out, DC_OUT_SIZE);
-                Serial.printf("##%s\n", dc_out);
+                // Leading '\n': some commands (set/kdu) route through
+                // readWriteValueToKDU -> compriseSendJson, which writes raw
+                // JSON straight to Serial with no trailing newline (protocol
+                // noise for the KDU wire format). Without this, "##..." would
+                // land mid-line and a client matching lines by a "##" prefix
+                // would miss the response entirely.
+                Serial.printf("\n##%s\n", dc_out);
             }
             return; // one command per poll
         }
