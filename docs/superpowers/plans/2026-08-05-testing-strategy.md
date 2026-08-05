@@ -72,10 +72,10 @@ Serial arbitration (the load-bearing detail): `Serial` (UART0/USB) is BOTH the f
 
 ```bash
 pio run -e esp32-s2-saola-1
-shasum -a 256 .pio/build/esp32-s2-saola-1/firmware.bin | tee docs/superpowers/plans/baseline-ship-firmware.sha256
+shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin | tee docs/superpowers/plans/baseline-ship-firmware.sha256
 ```
 
-(If the build dir name differs, find the bin with `ls .pio/build/*/firmware.bin`.)
+(If the build dir name differs, find the bin with `ls .pio/build/*/*.bin`.)
 
 - [ ] **Step 2: Add the static_assert block**
 
@@ -138,7 +138,7 @@ Temporarily change `#define Length_RS 3` to `4`, run `pio run -e esp32-s2-saola-
 
 ```bash
 pio run -e esp32-s2-saola-1
-shasum -a 256 .pio/build/esp32-s2-saola-1/firmware.bin
+shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin
 ```
 
 Expected: PASS, hash equal to the baseline (asserts and comments generate no code).
@@ -337,7 +337,7 @@ No `#ifdef` needed at call sites — ship builds compile the inline no-op stubs 
 
 ```bash
 pio run                      # ship env only (default_envs)
-shasum -a 256 .pio/build/esp32-s2-saola-1/firmware.bin   # must equal baseline
+shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # must equal baseline
 pio run -e esp32-s2-saola-1-dev                           # must compile clean
 ```
 
@@ -592,7 +592,7 @@ Safety: refuse to inject `key_long` on the encoder? `key_long` triggers `SHUT()`
 
 ```bash
 pio run -e esp32-s2-saola-1-dev && pio run
-shasum -a 256 .pio/build/esp32-s2-saola-1/firmware.bin   # equals baseline
+shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # equals baseline
 ```
 
 - [ ] **Step 4: Commit**
@@ -684,7 +684,7 @@ extern volatile unsigned char lcd_shadow[8][128];
 
 ```bash
 pio run -e esp32-s2-saola-1-dev && pio run
-shasum -a 256 .pio/build/esp32-s2-saola-1/firmware.bin   # equals baseline
+shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # equals baseline
 git add src/lcd.cpp include/lcd.h src/devconsole.cpp
 git commit -m "Add LCD shadow buffer and dump screen command"
 ```
@@ -758,7 +758,7 @@ When the user enters the WiFi PGM/RCU menu on a dev build, `handleWIFIServer` (`
 
 ```bash
 pio run -e esp32-s2-saola-1-dev && pio run
-shasum -a 256 .pio/build/esp32-s2-saola-1/firmware.bin   # equals baseline
+shasum -a 256 .pio/build/esp32-s2-saola-1/PRC152-N*.bin   # equals baseline
 git add src/bsp_wifi.cpp include/bsp_wifi.h src/devconsole.cpp
 git commit -m "Serve devconsole over WiFi /dev endpoint in dev builds"
 ```
