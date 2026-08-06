@@ -54,7 +54,9 @@ void readChanFromArray(CHAN_ARV_P B)
     B->TS       = atoi(parameterValue[Jts       ].valStr);
     B->POWER    = atoi(parameterValue[Jpower    ].valStr);
     B->GBW      = atoi(parameterValue[Jbandwith ].valStr);
-    sprintf((char *)B->NN, "%s", parameterValue[Jnickname].valStr);
+    // Bounded: valStr holds up to 15 chars but NN is 8 bytes (7 + '\0');
+    // an unbounded copy would overflow into the neighboring chan_arv slot.
+    snprintf((char *)B->NN, sizeof(B->NN), "%s", parameterValue[Jnickname].valStr);
 
     //		printf("*****chan:%d\r  rx:%.5lf\r tx:%.5lf\r rs:%d\r ts: %d\r power:%d\r gbw:%d\r nn:%s\n",
     //			    B->CHAN, B->RX_FREQ, B->TX_FREQ, B->RS, B->TS, B->POWER, B->GBW, B->NN);
@@ -74,7 +76,10 @@ void writeChanToArray(CHAN_ARV_P B)
     sprintf(parameterValue[Jts      ].valStr, "%03d", B->TS);
     sprintf(parameterValue[Jpower   ].valStr, "%d", B->POWER);
     sprintf(parameterValue[Jbandwith].valStr, "%d", B->GBW);
-    sprintf(parameterValue[Jnickname].valStr, "%s", B->NN);
+    // %.7s bounds the READ as well: if NN ever lost its terminator, plain %s
+    // would run past the 8-byte field.
+    snprintf(parameterValue[Jnickname].valStr, sizeof(parameterValue[Jnickname].valStr),
+             "%.7s", (const char *)B->NN);
     //		printf("*****chan:%d\r  rx:%.5lf\r tx:%.5lf\r rs:%d\r ts: %d\r power:%d\r gbw:%d\r nn:%s\n",
     //			    B->CHAN, B->RX_FREQ, B->TX_FREQ, B->RS, B->TS, B->POWER, B->GBW, B->NN);
     //	for(int i = Jcurrent; i<Jnickname+1; i++)

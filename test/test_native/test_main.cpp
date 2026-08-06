@@ -69,6 +69,35 @@ void test_chan_roundtrip(void)
     TEST_ASSERT_EQUAL_STRING("TESTNN7", (const char *)b.NN);
 }
 
+void test_overlong_nickname_truncates_into_NN(void)
+{
+    // valStr can hold 15 chars; NN is 8 bytes (7 + '\0'). An unbounded copy
+    // used to overflow into the neighboring CHAN_ARV memory.
+    CHAN_ARV b;
+    memset((void *)&b, 0, sizeof b);
+    snprintf(parameterValue[Jnickname].valStr,
+             sizeof(parameterValue[Jnickname].valStr), "%s", "ABCDEFGHIJKLMNO");
+    snprintf(parameterValue[Jcurrent].valStr,
+             sizeof(parameterValue[Jcurrent].valStr), "%s", "001");
+
+    readChanFromArray(&b);
+
+    TEST_ASSERT_EQUAL_STRING("ABCDEFG", (const char *)b.NN);
+}
+
+void test_unterminated_NN_reads_at_most_7(void)
+{
+    // If NN ever loses its terminator, the reverse copy must not read past
+    // the 8-byte field.
+    CHAN_ARV a;
+    memset((void *)&a, 0, sizeof a);
+    memset((void *)a.NN, 'X', sizeof a.NN); // no '\0' anywhere in NN
+
+    writeChanToArray(&a);
+
+    TEST_ASSERT_EQUAL_STRING("XXXXXXX", parameterValue[Jnickname].valStr);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -79,5 +108,7 @@ int main(void)
     RUN_TEST(test_freq_past_bug_430_13751_corrected);
     RUN_TEST(test_freq_corrects_to_625_grid);
     RUN_TEST(test_chan_roundtrip);
+    RUN_TEST(test_overlong_nickname_truncates_into_NN);
+    RUN_TEST(test_unterminated_NN_reads_at_most_7);
     return UNITY_END();
 }

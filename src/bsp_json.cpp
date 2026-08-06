@@ -26,7 +26,11 @@ void parseRcvJson(const char *rcvbuf)
         // printf("%s : %s\n", item[i], jsonDoc[item[i]]);
         // const char* sensor = obj[item[i]].as<String>();
         // sprintf(val[i], "%s",sensor);
-        sprintf(parameterValue[i].valStr, "%s", obj[parameterValue[i].item].as<String>());
+        // Bounded: JSON values arrive from the KDU UART / WiFi / devconsole and
+        // can be arbitrarily long; valStr is 16 bytes. (.c_str() also avoids
+        // passing a String object through varargs.)
+        snprintf(parameterValue[i].valStr, sizeof(parameterValue[i].valStr),
+                 "%s", obj[parameterValue[i].item].as<String>().c_str());
         // printf("%s : %s\n", item[i], val[i]);
     }
     // printf("parseRcvJson Over\n");
