@@ -15,7 +15,7 @@ Requires the PlatformIO Core CLI (`pio`); on macOS install via `brew install pla
 - Flash: `pio run -t upload --upload-port <port>` — `platformio.ini` hardcodes `COM17` (Windows); override on macOS (e.g. `/dev/cu.usbserial-*`)
 - Serial monitor: `pio device monitor` (115200 baud)
 - Test (host): `pio test -e native` — Unity host unit tests
-- Test (on-device): `pytest tools/hil --serial <port>` — hardware-required pytest suite (see `tools/hil/README.md`)
+- Test (on-device): `pytest tools/hil --serial <port>` or `--wifi 192.168.152.1` — hardware-required pytest suite (see `tools/hil/README.md`)
 
 Host unit tests: `pio test -e native` (Unity; pure logic in `lib/pure_logic/`). On-device tests: `tools/hil/` pytest against a `-DDEVCONSOLE` dev build (see `tools/hil/README.md`). No linter.
 
@@ -43,7 +43,7 @@ Single-threaded Arduino super-loop; no RTOS tasks. `loop()` in `src/main.cpp` po
 ### External units and protocols
 
 - **A20 RF module** (UART2): the actual transceiver. Configured via `Set_A20*` calls; `A002_CALLBACK()` must run for its responses to be consumed.
-- **KDU** — detachable keypad/display unit (UART1): exchanges one framed ASCII buffer containing all parameters. Field offsets are the `Length_*` / `*_RANK` / `*_rank` constant chains computed in `FCS152_KDU.h`; payload bytes are offset by `'0'` (`kdu_send_data`/`kdu_recv_data` in `userinclude.h`). Changing any field's length means updating the whole `Length_*`/`*_RANK` chain on both radio and KDU sides.
+- **KDU** — detachable keypad/display unit (UART1): exchanges one framed ASCII buffer containing all parameters. Field offsets are the `Length_*` / `*_RANK` / `*_rank` constant chains pinned in `include/kdu_protocol.h` (included by `FCS152_KDU.h`); payload bytes are offset by `'0'` (`kdu_send_data`/`kdu_recv_data` in `userinclude.h`). Changing any field's length means updating the whole `Length_*`/`*_RANK` chain on both radio and KDU sides.
 - **WiFi**: SoftAP + DNS + WebServer serving two HTML pages embedded as C strings — `html_PGM.cpp` (parameter programming) and `html_RCU.cpp` (real-time remote control) — plus OTA firmware update (`ConfigureToUpdate` in `bsp_wifi.cpp`).
 
 ### Data model and persistence

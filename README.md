@@ -57,7 +57,7 @@ The binary lands in `.pio/build/esp32-s2-saola-1/` as `PRC152-N<version>.bin` (t
 ## Testing
 
 - **Host unit tests**: `pio test -e native` (Unity framework; pure logic in `lib/pure_logic/` and `include/kdu_protocol.h`)
-- **On-device tests**: `pytest tools/hil --serial <port>` against a dev build (see [`tools/hil/README.md`](tools/hil/README.md); hardware required)
+- **On-device tests**: `pytest tools/hil --serial <port>` or `--wifi 192.168.152.1` over the dev build's SoftAP (see [`tools/hil/README.md`](tools/hil/README.md); hardware required)
 - **Dev console**: `pio run -e esp32-s2-saola-1-dev` embeds an interactive console over serial/HTTP for testing
 
 See `CLAUDE.md` (architecture) and [`docs/superpowers/`](docs/superpowers/) (design and plan) for details.
