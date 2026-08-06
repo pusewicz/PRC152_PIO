@@ -54,6 +54,14 @@ pio run
 
 The binary lands in `.pio/build/esp32-s2-saola-1/` as `PRC152-N<version>.bin` (the version comes from `custom_prog_version` in `platformio.ini`).
 
+## Testing
+
+- **Host unit tests**: `pio test -e native` (Unity framework; pure logic in `lib/pure_logic/` and `include/kdu_protocol.h`)
+- **On-device tests**: `pytest tools/hil --serial <port>` against a dev build (see [`tools/hil/README.md`](tools/hil/README.md); hardware required)
+- **Dev console**: `pio run -e esp32-s2-saola-1-dev` embeds an interactive console over serial/HTTP for testing
+
+See `CLAUDE.md` (architecture) and [`docs/superpowers/`](docs/superpowers/) (design and plan) for details.
+
 ## Flashing your radio
 
 There are two ways to get firmware onto the radio: over WiFi (easiest, no wiring) or over the serial programming connector.
@@ -121,7 +129,7 @@ The firmware is a single-threaded super-loop (no RTOS tasks) ported from an earl
 ## Contributing
 
 - `pio run` must build cleanly.
-- There is no test suite — say in your PR what you tested on hardware, or mark it "build-only" and list what still needs a radio to verify.
+- Say in your PR what was hardware-tested (the `tools/hil` suite counts), or list what still needs a radio to verify.
 - The review bar and firmware-specific pitfalls (loop timing, ISR safety, KDU protocol layout, power regressions) are documented in [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 - Write new comments in English; existing Chinese comments are being translated over time.
 
