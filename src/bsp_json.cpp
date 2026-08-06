@@ -3,47 +3,7 @@
 #include <ArduinoJson.h>
 #include <string.h>
 #include "bsp_json.h"
-
-ParameterValue_t parameterValue[ITEMSUM] = 
-{
-    {Jcmd       ,"cmd"      ,"FCS+ASKALL"   },
-    {Jcurrent   ,"current"  ,"008"          },
-    {Jrx_freq   ,"rx_freq"  ,"435.55000"    },
-    {Jtx_freq   ,"tx_freq"  ,"435.55000"    },
-    {Jrs        ,"rs"       ,"000"          },
-    {Jts        ,"ts"       ,"000"          },
-    {Jpower     ,"power"    ,"1"            },
-    {Jbandwith  ,"bandwith" ,"1"            },
-    {Jnickname  ,"nickname" ,"1234567"      },
-    {Jcf        ,"cf"       ,"0"            },
-    {Juv        ,"uv"       ,"0"            },
-    {JchanA     ,"chanA"    ,"001"          },
-    {JchanB     ,"chanB"    ,"002"          },
-    {Jvolume    ,"volume"   ,"1"            },
-    {Jstep      ,"step"     ,"0"            },
-    {Jsql       ,"sql"      ,"4"            },
-    {Jaudio     ,"audio"    ,"0"            },
-    {Jmic       ,"mic"      ,"1"            },
-    {Jtot       ,"tot"      ,"0"            },
-    {Jvdo       ,"outPower" ,"0"            },
-    {JpreTone   ,"preTone"  ,"1"            },
-    {JendTone   ,"endTone"  ,"1"            },
-    {Jwfm       ,"wfm"      ,"0"            },
-    {JfmFreq    ,"fmFreq"   ,"1036"         },    
-    {JfmChan    ,"fmChan"   ,"1"            },
-    {Jvoltage   ,"voltage"  ,"100"          },
-    {Jrssi      ,"rssi"     ,"000"          },
-    {JrcvSQ     ,"rcvSQ"    ,"0"            },
-    {JpressPTT  ,"pressPTT" ,"0"            },
-    {JpressSQU  ,"pressSQU" ,"0"            },
-    {Jhomemode  ,"homemode" ,"1"            },
-    {JrcvChan   ,"rcvChan"  ,"001"          },
-    {JselPos    ,"selChan"  ,"002"          },
-
-    {Jdevice    ,"device"   ,"PRC 152N"     },
-    {Jble       ,"ble"      ,"0"            },
-    {Jpit       ,"pit"      ,"0"            },
-};
+#include "param_marshal.h"
 
 // void parseRcvJson(const char *rcvbuf, const char *item[], char val[33][16], int size)
 void parseRcvJson(const char *rcvbuf)
@@ -66,7 +26,11 @@ void parseRcvJson(const char *rcvbuf)
         // printf("%s : %s\n", item[i], jsonDoc[item[i]]);
         // const char* sensor = obj[item[i]].as<String>();
         // sprintf(val[i], "%s",sensor);
-        sprintf(parameterValue[i].valStr, "%s", obj[parameterValue[i].item].as<String>());
+        // Bounded: JSON values arrive from the KDU UART / WiFi / devconsole and
+        // can be arbitrarily long; valStr is 16 bytes. (.c_str() also avoids
+        // passing a String object through varargs.)
+        snprintf(parameterValue[i].valStr, sizeof(parameterValue[i].valStr),
+                 "%s", obj[parameterValue[i].item].as<String>().c_str());
         // printf("%s : %s\n", item[i], val[i]);
     }
     // printf("parseRcvJson Over\n");

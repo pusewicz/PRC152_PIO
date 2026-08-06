@@ -913,3 +913,40 @@ int modifyWiFiInfo(int mode)
         }
     }
 }
+
+#ifdef DEVCONSOLE
+#include "devconsole.h"
+static char dev_out[4096];
+
+static void myHandleDev(void)
+{
+    String cmd = server.arg("c");
+    const char *c = cmd.c_str();
+    if (*c == '>') c++;
+    DevConsole_Execute(c, dev_out, sizeof(dev_out));
+    server.send(200, "application/json", dev_out);
+}
+
+// Dev-only WiFi bring-up: boots the devconsole SoftAP unconditionally so a
+// dev build always has a WiFi transport, independent of the on-radio WiFi
+// PGM/RCU menus. Touches only DEVCONSOLE-gated state (this handler, dev_out)
+// plus the pre-existing initSoftAP()/server globals also used by those
+// menus; no ship-visible state.
+//
+// Caveat: entering the on-radio WiFi menu (handleWIFIServer) re-runs
+// initSoftAP and layers its own routes onto the same `server`; leaving it
+// calls stopWIFIServer -> WiFi.mode(WIFI_OFF), which kills this console
+// transport (including the SoftAP) until the next reboot. Accepted for dev
+// builds -- see tools/hil/README.md.
+void DevConsole_WifiSetup(void)
+{
+    initSoftAP();
+    server.on("/dev", HTTP_POST, myHandleDev);
+    server.begin();
+    // Idle handleClient() otherwise calls delay(1) when no client is pending
+    // (WebServer's _nullDelay default) -- DevConsole_Poll calls handleClient()
+    // on every rate-limited poll, in every UI state, so that default would
+    // tax the super-loop by ~1 tick continuously. Disable it.
+    server.enableDelay(false);
+}
+#endif

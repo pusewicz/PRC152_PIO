@@ -1,5 +1,7 @@
 #include "main.h"
 #include "bsp_json.h"
+#include "param_marshal.h"
+#include "devconsole.h"
 
 extern u8 RSSI, SC,                         // SCERRN CONTRAST  CHAN = 0,
     STEP, SQL, AUD, MIC, ENC, TOT, BL, VDO, // VDO:输出电源
@@ -11,11 +13,12 @@ extern char sele_pos, rcv_chan;
 extern int FM_FREQ;
 extern u8 FM_CHAN;
 
-extern ParameterValue_t parameterValue[ITEMSUM];
-
-/// @brief 	将需要发送的数据赋值给存储对应变量的数组 parameterValue
+/// @brief 	sprintf-only refresh of parameterValue (no blocking hardware I/O):
+/// 		everything writeOtherValue2buf() does except the RSSI hardware
+/// 		refresh and the Jvoltage ADC read. Callable from the console
+/// 		without triggering an A20 UART round-trip or a battery ADC read.
 /// @param 	null
-void writeOtherValue2buf()
+void writeOtherValue2buf_core()
 {
     sprintf(parameterValue[Jcf      ].valStr, "%d", get_Flag(FLAG_CF_SWITCH_ADDR));
     sprintf(parameterValue[Juv      ].valStr, "%d", get_Flag(FLAG_VU_SWITCH_ADDR));
@@ -33,7 +36,19 @@ void writeOtherValue2buf()
     sprintf(parameterValue[Jwfm     ].valStr, "%d", WFM);
     sprintf(parameterValue[JfmFreq  ].valStr, "%03d", FM_FREQ);
     sprintf(parameterValue[Jhomemode].valStr, "%d", Home_Mode);
+    sprintf(parameterValue[Jrssi    ].valStr, "%03d", RSSI);
+    sprintf(parameterValue[JfmChan  ].valStr, "%d", FM_CHAN);
+    sprintf(parameterValue[JrcvSQ   ].valStr, "%03d", A002_SQ_READ);
+    sprintf(parameterValue[JpressPTT].valStr, "%d", PTT_READ);
+    sprintf(parameterValue[JpressSQU].valStr, "%d", SQUELCH_READ);
+    sprintf(parameterValue[JrcvChan ].valStr, "%03d", rcv_chan);
+    sprintf(parameterValue[JselPos  ].valStr, "%03d", sele_pos);
+}
 
+/// @brief 	将需要发送的数据赋值给存储对应变量的数组 parameterValue
+/// @param 	null
+void writeOtherValue2buf()
+{
     if (PTT_READ == 0)
         RSSI = 100;
     else
@@ -43,53 +58,10 @@ void writeOtherValue2buf()
         else
             RSSI = Get_A20_RSSI();
     }
-    sprintf(parameterValue[Jrssi    ].valStr, "%03d", RSSI);
-    sprintf(parameterValue[JfmChan  ].valStr, "%d", FM_CHAN);
+    writeOtherValue2buf_core();
     sprintf(parameterValue[Jvoltage ].valStr, "%d", Get_Battery_Vol());
-    sprintf(parameterValue[JrcvSQ   ].valStr, "%03d", A002_SQ_READ);
-    sprintf(parameterValue[JpressPTT].valStr, "%d", PTT_READ);
-    sprintf(parameterValue[JpressSQU].valStr, "%d", SQUELCH_READ);
-    sprintf(parameterValue[JrcvChan ].valStr, "%03d", rcv_chan);
-    sprintf(parameterValue[JselPos  ].valStr, "%03d", sele_pos);
 }
 
-/// @brief 	从数组内读取数据赋值给信道
-/// @param 	需要赋值的信道
-void readChanFromArray(CHAN_ARV_P B)
-{
-    B->CHAN     = atoi(parameterValue[Jcurrent  ].valStr);
-    B->RX_FREQ  = atof(parameterValue[Jrx_freq  ].valStr);
-    B->TX_FREQ  = atof(parameterValue[Jtx_freq  ].valStr);
-    B->RS       = atoi(parameterValue[Jrs       ].valStr);
-    B->TS       = atoi(parameterValue[Jts       ].valStr);
-    B->POWER    = atoi(parameterValue[Jpower    ].valStr);
-    B->GBW      = atoi(parameterValue[Jbandwith ].valStr);
-    sprintf((char *)B->NN, "%s", parameterValue[Jnickname].valStr);
-
-    //		printf("*****chan:%d\r  rx:%.5lf\r tx:%.5lf\r rs:%d\r ts: %d\r power:%d\r gbw:%d\r nn:%s\n",
-    //			    B->CHAN, B->RX_FREQ, B->TX_FREQ, B->RS, B->TS, B->POWER, B->GBW, B->NN);
-
-    //	for(int i = Jcurrent; i<Jnickname+1; i++)
-    //		printf("%s\n",parameterValue[i]);
-}
-
-/// @brief 	将需要发送的信道数据赋值给数组
-/// @param 	需要发送的信道
-void writeChanToArray(CHAN_ARV_P B)
-{
-    sprintf(parameterValue[Jcurrent ].valStr, "%03d", B->CHAN);
-    sprintf(parameterValue[Jrx_freq ].valStr, "%3.5f", B->RX_FREQ);
-    sprintf(parameterValue[Jtx_freq ].valStr, "%3.5f", B->TX_FREQ);
-    sprintf(parameterValue[Jrs      ].valStr, "%03d", B->RS);
-    sprintf(parameterValue[Jts      ].valStr, "%03d", B->TS);
-    sprintf(parameterValue[Jpower   ].valStr, "%d", B->POWER);
-    sprintf(parameterValue[Jbandwith].valStr, "%d", B->GBW);
-    sprintf(parameterValue[Jnickname].valStr, "%s", B->NN);
-    //		printf("*****chan:%d\r  rx:%.5lf\r tx:%.5lf\r rs:%d\r ts: %d\r power:%d\r gbw:%d\r nn:%s\n",
-    //			    B->CHAN, B->RX_FREQ, B->TX_FREQ, B->RS, B->TS, B->POWER, B->GBW, B->NN);
-    //	for(int i = Jcurrent; i<Jnickname+1; i++)
-    //		printf("%s\n",parameterValue[i]);
-}
 //
 
 int readWriteValueToKDU(int Cmd)
@@ -337,6 +309,10 @@ int PRC152receiveProcess()
             return BACK2MAIN;
         }
     }
+#ifdef DEVCONSOLE
+    if ((Serial.available() && Serial.peek() == '>') || DevConsole_LineInProgress())
+        return NO_OPERATE; // console traffic; DevConsole_Poll will consume it
+#endif
     if (UART1_getRcvFlag())
     {
         UART1_dataPreProcess();

@@ -1,6 +1,7 @@
 #include "encoder.h"
 #include "bsp_delay.h"
 #include "bsp_conio.h"
+#include "devconsole.h"
 
 volatile int TIMES = 0;	//编码器操作数值,正值为加,负值为减
 volatile u8 key_timer_cnt1 = 0;
@@ -98,6 +99,11 @@ static unsigned char key_driver(void)
 ***************************************************************************/
 u8 Encoder_Switch_Scan(u8 mode)
 {
+    DevConsole_Poll();
+    unsigned char inj_enc = DevConsole_TakeInjectedEnc();
+    if (inj_enc != key_idle)
+        return inj_enc;
+
     static unsigned char key_state_buffer2 = key_state_0;
 
     unsigned char key_return = key_idle;

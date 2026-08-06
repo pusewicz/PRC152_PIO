@@ -11,10 +11,13 @@ Firmware for the "FCS PRC152-N", a replica of the Harris PRC-152 radio, targetin
 Requires the PlatformIO Core CLI (`pio`); on macOS install via `brew install platformio`.
 
 - Build: `pio run`
+- Build dev console: `pio run -e esp32-s2-saola-1-dev` — embeds devconsole test interface
 - Flash: `pio run -t upload --upload-port <port>` — `platformio.ini` hardcodes `COM17` (Windows); override on macOS (e.g. `/dev/cu.usbserial-*`)
 - Serial monitor: `pio device monitor` (115200 baud)
+- Test (host): `pio test -e native` — Unity host unit tests
+- Test (on-device): `pytest tools/hil --serial <port>` or `--wifi 192.168.152.1` — hardware-required pytest suite (see `tools/hil/README.md`)
 
-There is no test suite and no linter.
+Host unit tests: `pio test -e native` (Unity; pure logic in `lib/pure_logic/`). On-device tests: `tools/hil/` pytest against a `-DDEVCONSOLE` dev build (see `tools/hil/README.md`). No linter.
 
 ## Versioning
 
@@ -29,6 +32,8 @@ Single-threaded Arduino super-loop; no RTOS tasks. `loop()` in `src/main.cpp` po
 
 `setup()` initializes hardware in a deliberate order (startup-noise suppression, power-rail sequencing) — preserve the order when modifying it.
 
+**Dev builds** (`esp32-s2-saola-1-dev` with `-DDEVCONSOLE`) embed a test console (`src/devconsole.cpp`) polled from the input scan primitives (`Matrix_KEY_Scan`/`Encoder_Switch_Scan`), speaking `>`-prefixed lines over the shared KDU/USB serial port and `POST /dev` on the boot-time SoftAP. Ship builds compile in no-op stubs; the binaries are code-identical.
+
 ### Layers
 
 - `bsp_*` files are the board-support layer: UART, I2C, CH423 I2C GPIO expander, M62364 DAC, ADC/DAC/PWM, timers, LCD transport, pin definitions (`bsp_conio`), persistent storage, WiFi/web server, and power/sleep/boot menu (`bsp_device`).
@@ -38,7 +43,7 @@ Single-threaded Arduino super-loop; no RTOS tasks. `loop()` in `src/main.cpp` po
 ### External units and protocols
 
 - **A20 RF module** (UART2): the actual transceiver. Configured via `Set_A20*` calls; `A002_CALLBACK()` must run for its responses to be consumed.
-- **KDU** — detachable keypad/display unit (UART1): exchanges one framed ASCII buffer containing all parameters. Field offsets are the `Length_*` / `*_RANK` / `*_rank` constant chains computed in `FCS152_KDU.h`; payload bytes are offset by `'0'` (`kdu_send_data`/`kdu_recv_data` in `userinclude.h`). Changing any field's length means updating the whole `Length_*`/`*_RANK` chain on both radio and KDU sides.
+- **KDU** — detachable keypad/display unit (UART1): exchanges one framed ASCII buffer containing all parameters. Field offsets are the `Length_*` / `*_RANK` / `*_rank` constant chains pinned in `include/kdu_protocol.h` (included by `FCS152_KDU.h`); payload bytes are offset by `'0'` (`kdu_send_data`/`kdu_recv_data` in `userinclude.h`). Changing any field's length means updating the whole `Length_*`/`*_RANK` chain on both radio and KDU sides.
 - **WiFi**: SoftAP + DNS + WebServer serving two HTML pages embedded as C strings — `html_PGM.cpp` (parameter programming) and `html_RCU.cpp` (real-time remote control) — plus OTA firmware update (`ConfigureToUpdate` in `bsp_wifi.cpp`).
 
 ### Data model and persistence
@@ -51,7 +56,7 @@ Single-threaded Arduino super-loop; no RTOS tasks. `loop()` in `src/main.cpp` po
 
 ## Code review
 
-When reviewing changes or PRs, apply `.github/copilot-instructions.md` — it contains the firmware-specific review checklist (loop-path timing, the empty `DISABLE_INT` critical-section trap, buffer/protocol/version sync, power regressions) and the merge bar. Since there is no test suite, every behavioral change must state what was hardware-tested or list what still needs hardware testing.
+When reviewing changes or PRs, apply `.github/copilot-instructions.md` — it contains the firmware-specific review checklist (loop-path timing, the empty `DISABLE_INT` critical-section trap, buffer/protocol/version sync, power regressions) and the merge bar. Every behavioral change must state what was hardware-tested (the `tools/hil` suite counts) or list what still needs hardware testing. Changes to `Length_*` field sizes fail the build via `include/kdu_protocol.h` static_asserts — never bump the pinned values without the corresponding KDU-side firmware change.
 
 ## Subagents
 

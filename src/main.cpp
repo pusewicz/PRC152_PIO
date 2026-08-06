@@ -2,6 +2,7 @@
 
 #define FREERTOS_CONFIG_XTENSA_H
 #include "main.h"
+#include "devconsole.h"
 extern void menuUpdate(void);
 void setup()
 {
@@ -35,7 +36,10 @@ void setup()
     VFO_Load_Data();
     A002_Init();
     VFO_Clear();
-    
+
+    DevConsole_Init();
+    DevConsole_WifiInit();
+
     // while(1)FeedDog();
     // test_A20Deinit();
     // test_DAC_always();

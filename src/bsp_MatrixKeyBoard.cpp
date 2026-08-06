@@ -2,6 +2,7 @@
 #include "bsp_device.h"
 #include "bsp_timer.h"
 #include "tim_int.h"
+#include "devconsole.h"
 
 const  uint8_t keymaps[MATRIX_ROWS][MATRIX_COLS]={
 	{MATRIX_RESULT_1, MATRIX_RESULT_2, 	  MATRIX_RESULT_3,		MATRIX_RESULT_CLR},
@@ -93,6 +94,10 @@ uint16_t Key_Read_Col(void)
 //
 unsigned char Matrix_KEY_Scan(unsigned char mode)
 {
+    DevConsole_Poll();
+    unsigned char inj = DevConsole_TakeInjectedKey();
+    if (inj != MATRIX_RESULT_ERROR)
+        return inj;
     if(bsp_CheckTimer(TMR_KEY_SCAN)==0)
     {
         return MATRIX_RESULT_ERROR;
