@@ -1,5 +1,6 @@
 #include "main.h"
 #include "bsp_json.h"
+#include "param_marshal.h"
 #include "devconsole.h"
 
 extern u8 RSSI, SC,                         // SCERRN CONTRAST  CHAN = 0,
@@ -11,8 +12,6 @@ extern volatile u8 KDU_INSERT;
 extern char sele_pos, rcv_chan;
 extern int FM_FREQ;
 extern u8 FM_CHAN;
-
-extern ParameterValue_t parameterValue[ITEMSUM];
 
 /// @brief 	sprintf-only refresh of parameterValue (no blocking hardware I/O):
 /// 		everything writeOtherValue2buf() does except the RSSI hardware
@@ -63,43 +62,6 @@ void writeOtherValue2buf()
     sprintf(parameterValue[Jvoltage ].valStr, "%d", Get_Battery_Vol());
 }
 
-/// @brief 	从数组内读取数据赋值给信道
-/// @param 	需要赋值的信道
-void readChanFromArray(CHAN_ARV_P B)
-{
-    B->CHAN     = atoi(parameterValue[Jcurrent  ].valStr);
-    B->RX_FREQ  = atof(parameterValue[Jrx_freq  ].valStr);
-    B->TX_FREQ  = atof(parameterValue[Jtx_freq  ].valStr);
-    B->RS       = atoi(parameterValue[Jrs       ].valStr);
-    B->TS       = atoi(parameterValue[Jts       ].valStr);
-    B->POWER    = atoi(parameterValue[Jpower    ].valStr);
-    B->GBW      = atoi(parameterValue[Jbandwith ].valStr);
-    sprintf((char *)B->NN, "%s", parameterValue[Jnickname].valStr);
-
-    //		printf("*****chan:%d\r  rx:%.5lf\r tx:%.5lf\r rs:%d\r ts: %d\r power:%d\r gbw:%d\r nn:%s\n",
-    //			    B->CHAN, B->RX_FREQ, B->TX_FREQ, B->RS, B->TS, B->POWER, B->GBW, B->NN);
-
-    //	for(int i = Jcurrent; i<Jnickname+1; i++)
-    //		printf("%s\n",parameterValue[i]);
-}
-
-/// @brief 	将需要发送的信道数据赋值给数组
-/// @param 	需要发送的信道
-void writeChanToArray(CHAN_ARV_P B)
-{
-    sprintf(parameterValue[Jcurrent ].valStr, "%03d", B->CHAN);
-    sprintf(parameterValue[Jrx_freq ].valStr, "%3.5f", B->RX_FREQ);
-    sprintf(parameterValue[Jtx_freq ].valStr, "%3.5f", B->TX_FREQ);
-    sprintf(parameterValue[Jrs      ].valStr, "%03d", B->RS);
-    sprintf(parameterValue[Jts      ].valStr, "%03d", B->TS);
-    sprintf(parameterValue[Jpower   ].valStr, "%d", B->POWER);
-    sprintf(parameterValue[Jbandwith].valStr, "%d", B->GBW);
-    sprintf(parameterValue[Jnickname].valStr, "%s", B->NN);
-    //		printf("*****chan:%d\r  rx:%.5lf\r tx:%.5lf\r rs:%d\r ts: %d\r power:%d\r gbw:%d\r nn:%s\n",
-    //			    B->CHAN, B->RX_FREQ, B->TX_FREQ, B->RS, B->TS, B->POWER, B->GBW, B->NN);
-    //	for(int i = Jcurrent; i<Jnickname+1; i++)
-    //		printf("%s\n",parameterValue[i]);
-}
 //
 
 int readWriteValueToKDU(int Cmd)
