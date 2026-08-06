@@ -34,5 +34,10 @@ int modifyWiFiInfo(int mode);
 extern const char *html_PGM;
 extern const char *html_RCU;
 
+#ifdef DEVCONSOLE
+// WebServer.h is already pulled in above (needed by initWebServer_PGM/RCU).
+extern WebServer server;
+void DevConsole_WifiSetup(void);
+#endif
 
 #endif

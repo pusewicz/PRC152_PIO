@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "bsp_json.h"
+#include "bsp_wifi.h"
 #include <ArduinoJson.h>
 
 #define DC_LINE_SIZE 1024
@@ -122,7 +123,7 @@ void DevConsole_Init(void)
     dc_in_line = 0;
 }
 
-void DevConsole_WifiInit(void) {} // Task 6
+void DevConsole_WifiInit(void) { DevConsole_WifiSetup(); }
 
 unsigned char DevConsole_TakeInjectedKey(void)
 {
@@ -264,7 +265,11 @@ int DevConsole_Execute(const char *line, char *out, int outsz)
 }
 
 // Bounded serial poll: consume console bytes only ('>' first-byte arbitration
-// against KDU JSON frames), execute at most one command per call.
+// against KDU JSON frames), execute at most one command per call. Also pumps
+// the WiFi transport (server.handleClient(), which dispatches at most one
+// pending HTTP request per call) -- the serial block below uses `break`
+// rather than `return` on every exit path so this always runs once the 5ms
+// rate gate above has opened, regardless of what the serial side did.
 void DevConsole_Poll(void)
 {
     static uint32_t last_ms = 0;
@@ -286,7 +291,7 @@ void DevConsole_Poll(void)
         if (!dc_in_line)
         {
             if (Serial.peek() != '>')
-                return; // not ours: leave for the KDU processor
+                break; // not ours: leave for the KDU processor
             Serial.read(); // consume '>'
             dc_in_line = 1;
             dc_line_len = 0;
@@ -310,10 +315,12 @@ void DevConsole_Poll(void)
                 // would miss the response entirely.
                 Serial.printf("\n##%s\n", dc_out);
             }
-            return; // one command per poll
+            break; // one command per poll
         }
         if (dc_line_len < DC_LINE_SIZE - 1)
             dc_line[dc_line_len++] = c;
     }
+
+    server.handleClient();
 }
 #endif
