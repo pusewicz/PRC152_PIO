@@ -102,25 +102,33 @@ void UART2_Send_Message(char s[], int size)
 }
 
 /*******************模块相关函数*****************/
+// Clamp a frequency into the bands the A20 supports, mirroring the
+// save_ChannelParameter rules (below 136 -> 136, gap/above/NaN -> 435.025).
+static double clamp_a20_freq(double f)
+{
+    if (f >= 136.0 && f <= 174.0)
+        return f;
+    if (f >= 400.0 && f <= 480.0)
+        return f;
+    return (f < 136.0) ? 136.0 : 435.02500; // NaN fails the < too
+}
+
 //设置主要收发参数
 void Set_A20(CHAN_ARV set, unsigned char sq)
 {
-    unsigned char a002_send_buff[47] = "AT+DMOSETGROUP=1,436.025,436.025,000,1,001,1\r\n";
-    int i = 0;
-    D_printf("\nSET A20: TX:%f, RX:%f, TS:%d, RS:%d, SQL:%d, GBW:%d, POWER:%d\n", set.TX_FREQ, set.RX_FREQ, set.TS, set.RS, sq, set.GBW, set.POWER);
-    if (set.GBW)
-        a002_send_buff[15] = '1';
-    else
-        a002_send_buff[15] = '0';
+    char a002_send_buff[64];
 
+    set.TX_FREQ = clamp_a20_freq(set.TX_FREQ);
+    set.RX_FREQ = clamp_a20_freq(set.RX_FREQ);
+    D_printf("\nSET A20: TX:%f, RX:%f, TS:%d, RS:%d, SQL:%d, GBW:%d, POWER:%d\n", set.TX_FREQ, set.RX_FREQ, set.TS, set.RS, sq, set.GBW, set.POWER);
     if (sq > 8)
         sq = 1;
     if (set.POWER)
         set.POWER = 1;
 
-    sprintf((char *)a002_send_buff + 17, "%3.3f,%3.3f,%03d,%d,%03d,%d\r\n", set.TX_FREQ, set.RX_FREQ, set.RS, sq, set.TS, set.POWER);
-    for (i = 0; i <= 45; i++)
-        UART2_Put_Char(a002_send_buff[i]);
+    snprintf(a002_send_buff, sizeof(a002_send_buff), "AT+DMOSETGROUP=%d,%3.5f,%3.5f,%03d,%d,%03d,%d\r\n",
+             set.GBW ? 1 : 0, set.TX_FREQ, set.RX_FREQ, set.RS, sq, set.TS, set.POWER);
+    UART2_Put_String((unsigned char *)a002_send_buff);
     delay_ms(100);
     //	printf("%s\n", a002_send_buff);
     //	printf("\nSET TIME: %d\n", key_timer_cnt1);
