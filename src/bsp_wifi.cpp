@@ -943,5 +943,10 @@ void DevConsole_WifiSetup(void)
     initSoftAP();
     server.on("/dev", HTTP_POST, myHandleDev);
     server.begin();
+    // Idle handleClient() otherwise calls delay(1) when no client is pending
+    // (WebServer's _nullDelay default) -- DevConsole_Poll calls handleClient()
+    // on every rate-limited poll, in every UI state, so that default would
+    // tax the super-loop by ~1 tick continuously. Disable it.
+    server.enableDelay(false);
 }
 #endif
