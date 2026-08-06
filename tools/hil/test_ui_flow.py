@@ -1,8 +1,12 @@
 import time
+import pytest
 
 
 def test_channel_step_updates_state(dc):
     """UP then DOWN on the VFO page: channel changes and comes back."""
+    flags = dc.dump("flags")
+    if flags.get("cf") != 0:
+        pytest.skip("radio not in channel mode")
     before = dc.dump("chan")["chan"][0]["chan"]
     dc.key("UP")
     time.sleep(0.4)
